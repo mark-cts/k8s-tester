@@ -38,7 +38,7 @@ jobs:
       # setup gcloud for gcr auth
       - uses: google-github-actions/setup-gcloud@master
         with:
-          project_id: ${{ env. PROJECT_ID }}
+          project_id: ${{ env.PROJECT_ID }}
           service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
           export_default_credentials: true
       - run: |
@@ -54,4 +54,22 @@ jobs:
           password: ${{ secrets.GCLOUD_SERVICE_KEY }}
       - name: push
         run: |
-          docker push ${{ env.REGISTRY_HOSTNAME }}/$IMAGE:${{ env.GITHUB_SHA }}
+          docker push ${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.GITHUB_SHA }}
+
+  commit:
+    needs: build
+    name: Commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: imranismail/setup-kustomize@v1
+      - name: set image
+        run: |
+          cd infra/k8s/overlays/dev/
+          kustomize edit set image ${{ env.IMAGE }}
+          kustomze build .
+      - name: commit
+        run: |
+          git add infra/k8s/overlays/dev/kustomization.yaml
+          git commit -m "CI: Set image for `${{ env.IMAGE }}` in `dev` to `${{ env.GITHUB_SHA}}"
+          git push
