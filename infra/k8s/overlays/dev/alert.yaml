@@ -5,7 +5,7 @@ metadata:
   name: hello-world
 spec:
   providerRef:
-    name: hello-world
+    name: hello-world-dev
   eventSeverity: info
   eventSources:
     - kind: Kustomization
