@@ -69,7 +69,7 @@ jobs:
       - name: set image
         run: |
           cd infra/k8s/overlays/${{ env.ENVIRONMENT }}/
-          kustomize edit set image helloworld=${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.GITHUB_SHA }}
+          kustomize edit set image ${{ env.IMAGE }}=${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.GITHUB_SHA }}
           kustomize build .
       - name: commit
         uses: EndBug/add-and-commit@v7
@@ -77,4 +77,4 @@ jobs:
           add: infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
-          message: "CI: Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.GITHUB_SHA}}"
+          message: "CI: Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.GITHUB_SHA }}"
