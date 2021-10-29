@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: hello-world-dev
-nameSuffix: "-dev"
+nameSuffix: -dev
 
 resources:
 - ../../base
@@ -9,7 +9,7 @@ resources:
 images:
 - name: hello-world
   newName: europe-west1-docker.pkg.dev/markbox-cts/images/hello-world
-  newTag: ace1de66ffe945af22ba440d8c383c98c81257c2
+  newTag: b74614b864a4111adf4e2a252ce83c6bcb66cf0e
 
 commonLabels:
   env: dev
