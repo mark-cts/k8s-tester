@@ -4,6 +4,8 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - app/**
 
 env:
   GITHUB_SHA: ${{ github.sha }} 
@@ -67,7 +69,7 @@ jobs:
       - name: set image
         run: |
           cd infra/k8s/overlays/${{ env.ENVIRONMENT }}/
-          kustomize edit set image helloworld=${{ env.REGISTRY_HOSTNAME }}:${{ env.IMAGE }}
+          kustomize edit set image helloworld=${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.GITHUB_SHA }}
           kustomize build .
       - name: commit
         uses: EndBug/add-and-commit@v7
