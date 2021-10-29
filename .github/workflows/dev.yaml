@@ -45,7 +45,7 @@ jobs:
       - name: login
         uses: docker/login-action@v1
         with:
-          registry: $REGISTRY_HOSTNAME
+          registry: europe-west1-docker.pkg.dev
           username: _json_key
           password: ${{ secrets.GCLOUD_SERVICE_KEY }}
       - name: push
