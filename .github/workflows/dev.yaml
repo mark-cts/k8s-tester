@@ -11,6 +11,7 @@ env:
   IMAGE: hello-world
   REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
   PROJECT_ID: markbox-cts
+  ENVIRONMENT: dev
 
 jobs:
   lint:
@@ -65,11 +66,11 @@ jobs:
       - uses: imranismail/setup-kustomize@v1
       - name: set image
         run: |
-          cd infra/k8s/overlays/dev/
-          kustomize edit set image ${{ env.IMAGE }}
+          cd infra/k8s/overlays/${{ env.ENVIRONMENT }}/
+          kustomize edit set image helloworld=${{ env.REGISTRY_HOSTNAME }}:${{ env.IMAGE }}
           kustomze build .
       - name: commit
         run: |
-          git add infra/k8s/overlays/dev/kustomization.yaml
-          git commit -m "CI: Set image for `${{ env.IMAGE }}` in `dev` to `${{ env.GITHUB_SHA}}"
+          git add infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
+          git commit -m "CI: Set image for `${{ env.IMAGE }}` in `${{ env.ENVIRONMENT }}` to `${{ env.GITHUB_SHA}}"
           git push
