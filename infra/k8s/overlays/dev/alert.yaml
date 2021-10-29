@@ -9,5 +9,5 @@ spec:
   eventSeverity: info
   eventSources:
     - kind: Kustomization
-      name: hello-world
+      name: hello-world-dev
       namespace: hello-world-dev
