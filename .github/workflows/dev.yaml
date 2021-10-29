@@ -37,6 +37,10 @@ jobs:
         uses: docker/setup-buildx-action@v1
       # setup gcloud for gcr auth
       - uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: $PROJECT_ID
+          service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
+          export_default_credentials: true
       - run: |
           gcloud auth configure-docker europe-west1-docker.pkg.dev
       - name: Build
