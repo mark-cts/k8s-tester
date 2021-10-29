@@ -4,6 +4,7 @@ from flask_healthz import healthz
 app = Flask(__name__)
 app.register_blueprint(healthz, url_prefix="/healthz")
 
+
 # default route
 @app.route("/")
 def hello_world():
