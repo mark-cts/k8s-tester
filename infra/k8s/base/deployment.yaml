@@ -17,3 +17,15 @@ spec:
         image: hello-world
         ports:
         - containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /healthz/live
+            port: 8080
+          initialDelaySeconds: 5
+          timeoutSeconds: 1
+        readinessProbe:
+          httpGet:
+            path: /healthz/ready
+            port: 8080
+          initialDelaySeconds: 5
+          timeoutSeconds: 1
