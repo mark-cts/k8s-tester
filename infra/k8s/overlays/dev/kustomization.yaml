@@ -9,8 +9,8 @@ images:
   newName: europe-west1-docker.pkg.dev/markbox-cts/images/hello-world-img
   newTag: imthegitsha
 - name: helloworld
-  newName: europe-west1-docker.pkg.dev/markbox-cts/images
-  newTag: hello-world
+  newName: europe-west1-docker.pkg.dev/markbox-cts/images/hello-world
+  newTag: ace1de66ffe945af22ba440d8c383c98c81257c2
 
 commonLabels:
   env: dev
