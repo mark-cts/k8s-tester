@@ -72,5 +72,5 @@ jobs:
       - name: commit
         run: |
           git add infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
-          git commit -m "CI: Set image for `${{ env.IMAGE }}` in `${{ env.ENVIRONMENT }}` to `${{ env.GITHUB_SHA}}"
+          git commit -m "CI: Set image for `${{ env.IMAGE }}` in `${{ env.ENVIRONMENT }}` to `${{ env.GITHUB_SHA}}`"
           git push
