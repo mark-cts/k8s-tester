@@ -71,6 +71,8 @@ jobs:
           kustomize build .
       - name: commit
         run: |
+          git config --global user.email "ci@gingerninja.co"
+          git config --global user.name "ci"
           git add infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
           git commit -m "CI: Set image for `${{ env.IMAGE }}` in `${{ env.ENVIRONMENT }}` to `${{ env.GITHUB_SHA}}`"
           git push
