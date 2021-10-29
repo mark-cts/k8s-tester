@@ -9,7 +9,7 @@ env:
   GITHUB_SHA: ${{ github.sha }} 
   GITHUB_REF: ${{ github.ref }} 
   IMAGE: hello-world
-  REGISTRY_HOSTNAME: gcr.io 
+  REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
 
 jobs:
   lint:
