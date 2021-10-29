@@ -7,8 +7,8 @@ resources:
   - ../../base
 
 images:
-  - name: hello-world-img
-    newName: europe-west1-docker.pkg.dev/markbox-cts/images/hello-world-img
+  - name: hello-world
+    newName: europe-west1-docker.pkg.dev/markbox-cts/images/hello-world
     newTag: "imthegitsha"
 
 commonLabels:
