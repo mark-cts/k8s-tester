@@ -11,8 +11,8 @@ def hello_world():
 
 
 def liveness():
-  pass
+    pass
 
 
 def readiness():
-  pass
+    pass
