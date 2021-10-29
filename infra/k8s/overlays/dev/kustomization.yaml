@@ -5,6 +5,7 @@ nameSuffix: -dev
 
 resources:
 - ../../base
+- alert.yaml
 
 images:
 - name: hello-world
