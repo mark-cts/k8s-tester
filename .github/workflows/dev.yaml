@@ -75,4 +75,4 @@ jobs:
           git config --global user.name "ci"
           git add infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
           git commit -m "CI: Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.GITHUB_SHA}}"
-          git push origin ${{ env.GITHUB_REF }}
+          git push origin ${{ env.GITHUB_HEAD_REF }}
