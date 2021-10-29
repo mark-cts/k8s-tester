@@ -10,4 +10,4 @@ spec:
   eventSources:
     - kind: Kustomization
       name: hello-world
-      namespace: hello-world
+      namespace: hello-world-dev
