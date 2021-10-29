@@ -5,7 +5,7 @@ app = Flask(__name__)
 app.register_blueprint(healthz, url_prefix="/healthz")
 
 
-# default route
+# default route path
 @app.route("/")
 def hello_world():
     return "Hello, Docker!"
