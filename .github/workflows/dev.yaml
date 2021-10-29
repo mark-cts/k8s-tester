@@ -9,7 +9,9 @@ env:
   GITHUB_SHA: ${{ github.sha }} 
   GITHUB_REF: ${{ github.ref }} 
   IMAGE: hello-world
-  REGISTRY_HOSTNAME: gcr.io 
+  REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
+  PROJECT_ID: markbox-cts
+  ENVIRONMENT: dev
 
 jobs:
   lint:
@@ -21,10 +23,12 @@ jobs:
         uses: github/super-linter@v4
         env:
           VALIDATE_ALL_CODEBASE: false
+          FILTER_REGEX_INCLUDE: .*app/.*
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build:
+    needs: lint
     name: Build
     runs-on: ubuntu-latest
     steps:
@@ -34,14 +38,41 @@ jobs:
         uses: docker/setup-buildx-action@v1
       # setup gcloud for gcr auth
       - uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
+          export_default_credentials: true
       - run: |
           gcloud auth configure-docker europe-west1-docker.pkg.dev
       - name: Build
         run: |
-          docker build -t "$REGISTRY_HOSTNAME"/"$IMAGE":$GITHUB_SHA
-      - uses: RafikFarhad/push-to-gcr-github-action@v4
+          docker build -t ${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.GITHUB_SHA }} app/
+      - name: login
+        uses: docker/login-action@v1
         with:
-          gcloud_service_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
-          registry: $REGISTRY_HOSTNAME
-          project_id: $PROJECT_ID
-          image_name: "$IMAGE:$GITHUB_SHA"
+          registry: europe-west1-docker.pkg.dev
+          username: _json_key
+          password: ${{ secrets.GCLOUD_SERVICE_KEY }}
+      - name: push
+        run: |
+          docker push ${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.GITHUB_SHA }}
+
+  commit:
+    needs: build
+    name: Commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: imranismail/setup-kustomize@v1
+      - name: set image
+        run: |
+          cd infra/k8s/overlays/${{ env.ENVIRONMENT }}/
+          kustomize edit set image helloworld=${{ env.REGISTRY_HOSTNAME }}:${{ env.IMAGE }}
+          kustomize build .
+      - name: commit
+        uses: EndBug/add-and-commit@v7
+        with:
+          add: infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
+          author_name: "ci"
+          author_email: "ci@gingerninja.co"
+          message: "CI: Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.GITHUB_SHA}}"
