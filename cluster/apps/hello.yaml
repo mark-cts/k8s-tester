@@ -1,0 +1,52 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: GitRepository
+metadata:
+  name: hello-world
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  ref:
+    branch: main
+  secretRef:
+    name: flux-system # cheat as same repo
+  url: ssh://git@github.com/mark-cts/k8s-tester
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
+kind: Kustomization
+metadata:
+  name: hello-world-dev
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./infra/k8s/overlays/dev
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: hello-world
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
+kind: Kustomization
+metadata:
+  name: hello-world-uat
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./infra/k8s/overlays/uat
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: hello-world
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
+kind: Kustomization
+metadata:
+  name: hello-world-live
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./infra/k8s/overlays/live
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: hello-world
