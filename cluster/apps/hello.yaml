@@ -27,7 +27,7 @@ spec:
   healthChecks:
     - apiVersion: apps/v1
       kind: Deployment
-      name: hello-world
+      name: hello-world-dev
       namespace: hello-world-dev
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
@@ -45,7 +45,7 @@ spec:
   healthChecks:
     - apiVersion: apps/v1
       kind: Deployment
-      name: hello-world
+      name: hello-world-uat
       namespace: hello-world-uat
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
@@ -63,5 +63,5 @@ spec:
   healthChecks:
     - apiVersion: apps/v1
       kind: Deployment
-      name: hello-world
+      name: hello-world-live
       namespace: hello-world-live
