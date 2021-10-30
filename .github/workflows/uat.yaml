@@ -8,12 +8,11 @@ env:
   PROJECT_ID: markbox-cts
   ENVIRONMENT_PREV: dev
   ENVIRONMENT: uat
-  DEPLOYMENT_NAME: hello-world-dev
 
 jobs:
   setup-pr:
     name: Setup PR
-    if: github.event.state == 'success' && github.event.context == 'kustomize/${{ env.DEPLOYMENT_NAME }}'
+    if: github.event.state == 'success' && github.event.context == 'kustomize/hello-world-dev' # kustomize/dep-name
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
