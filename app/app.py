@@ -11,6 +11,12 @@ def hello_world():
     return "Hello, Docker!"
 
 
+# route 2
+@app.route("/test")
+def hello_test():
+    return "Hello, test!"
+
+
 @app.route("/healthz/live")
 def liveness():
     return "OK"
