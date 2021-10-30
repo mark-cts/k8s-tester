@@ -22,7 +22,7 @@ jobs:
       - uses: imranismail/setup-kustomize@v1
       - name: set image
         run: |
-          export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.ENVIRONMENT_PREV }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"$TAG\") | .newTag")
+          export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.ENVIRONMENT_PREV }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
           echo "image_tag=${IMAGE_TAG} >> $GITHUB_ENV"
           cd infra/k8s/overlays/${{ env.ENVIRONMENT }}/
           kustomize edit set image ${{ env.IMAGE }}=${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:$IMAGE_TAG
