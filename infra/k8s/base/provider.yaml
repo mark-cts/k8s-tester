@@ -1,9 +1,0 @@
-apiVersion: notification.toolkit.fluxcd.io/v1beta1
-kind: Provider
-metadata:
-  name: hello-world
-spec:
-  type: github
-  address: https://github.com/mark-cts/k8s-tester
-  secretRef:
-    name: github
