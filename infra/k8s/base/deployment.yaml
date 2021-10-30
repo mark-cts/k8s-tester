@@ -28,4 +28,4 @@ spec:
             path: /healthz/ready
             port: 8080
           initialDelaySeconds: 5
-          timeoutSeconds: 1
+          timeoutSeconds: 3
