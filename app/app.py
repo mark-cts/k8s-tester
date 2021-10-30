@@ -1,8 +1,8 @@
+import time
+
 from flask import Flask
-from flask_healthz import healthz
 
 app = Flask(__name__)
-app.register_blueprint(healthz, url_prefix="/healthz")
 
 
 # default route path
@@ -11,9 +11,12 @@ def hello_world():
     return "Hello, Docker!"
 
 
+@app.route("/healthz/live")
 def liveness():
-    pass
+    return "OK"
 
 
+@app.route("/healthz/ready")
 def readiness():
-    pass
+    time.sleep(1)
+    return "OK"
