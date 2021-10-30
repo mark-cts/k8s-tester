@@ -1,3 +1,4 @@
+import time
 from flask import Flask
 
 app = Flask(__name__)
@@ -16,5 +17,5 @@ def liveness():
 
 @app.route("/healthz/ready")
 def readiness():
-    time.sleep(1);
+    time.sleep(1)
     return "OK"
