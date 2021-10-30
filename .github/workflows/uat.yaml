@@ -1,0 +1,36 @@
+name: uat
+
+on:
+  status
+env:
+  IMAGE: hello-world
+  REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
+  PROJECT_ID: markbox-cts
+  ENVIRONMENT_PREV: dev
+  ENVIRONMENT: uat
+
+jobs:
+  setup-pr:
+    name: Setup PR
+    if: github.event.state == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: echo "Commit status is ${CTX}"
+        env:
+          CTX: ${{ github.event.context }}
+      # - uses: imranismail/setup-kustomize@v1
+      # - name: set image
+      #   run: |
+      #     export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.ENVIRONMENT_PREV }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"$TAG\") | .newTag")
+      #     echo "image_tag=${IMAGE_TAG} >> $GITHUB_ENV"
+      #     cd infra/k8s/overlays/${{ env.ENVIRONMENT }}/
+      #     kustomize edit set image ${{ env.IMAGE }}=${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:$IMAGE_TAG
+      #     kustomize build .
+      # - name: commit
+      #   uses: EndBug/add-and-commit@v7
+      #   with:
+      #     add: infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
+      #     author_name: "ci"
+      #     author_email: "ci@gingerninja.co"
+      #     message: "CI: Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.image_tag }}"
