@@ -17,6 +17,7 @@ def hello_test():
     return "Hello, test!"
 
 
+# healthcheck
 @app.route("/healthz/live")
 def liveness():
     return "OK"
