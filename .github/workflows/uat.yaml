@@ -18,7 +18,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: imranismail/setup-kustomize@v1
       - run: |
-          echo "${{ toJson(github) }}"
+          cat << OBJECT
+          ${{ toJson(github) }}
+          OBJECT
       - name: set image
         run: |
           export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.ENVIRONMENT_PREV }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
