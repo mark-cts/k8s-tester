@@ -5,7 +5,7 @@ from flask import Flask
 app = Flask(__name__)
 
 
-# default route
+# default routes
 @app.route("/")
 def hello_world():
     return "Hello, Docker!"
