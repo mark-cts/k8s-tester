@@ -13,7 +13,7 @@ jobs:
   update-live:
     name: Update Live Image
     environment: live
-    if: github.event.state == 'success' && startsWith(github.event.commit.message, '[CI-UAT]') && github.event.context == 'kustomization/hello-world-uat' # kustomize/dep-name
+    if: github.event.state == 'success' && startsWith(github.event.commit.message, '[CI-uat]') && github.event.context == 'kustomization/hello-world-uat' # kustomize/dep-name
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
