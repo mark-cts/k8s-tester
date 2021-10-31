@@ -13,7 +13,7 @@ jobs:
   update-uat:
     name: Update UAT Image
     environment: uat
-    if: github.event.state == 'success'  && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.message, 'dev') && github.event.context == 'kustomization/hello-world-dev' # kustomize/dep-name
+    if: github.event.state == 'success'  && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.commit.message, 'dev') && github.event.context == 'kustomization/hello-world-dev' # kustomize/dep-name
     #if: github.event.state == 'success' && github.event.context == 'kustomization/hello-world-dev' # kustomize/dep-name
     runs-on: ubuntu-latest
     steps:
