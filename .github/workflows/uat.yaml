@@ -12,15 +12,11 @@ env:
 jobs:
   setup-pr:
     name: Setup PR
-    if: github.event.state == 'success' && github.event.context == 'kustomization/hello-world-dev' # kustomize/dep-name
+    if: github.event.state == 'success' && startsWith(github.event.commit.message, "[CI-DEV]") && github.event.context == 'kustomization/hello-world-dev' # kustomize/dep-name
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: imranismail/setup-kustomize@v1
-      - run: |
-          cat << OBJECT
-          ${{ toJson(github) }}
-          OBJECT
       - name: set image
         run: |
           export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.ENVIRONMENT_PREV }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
