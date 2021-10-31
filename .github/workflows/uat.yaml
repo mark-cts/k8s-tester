@@ -12,6 +12,7 @@ env:
 jobs:
   update-uat:
     name: Update UAT Image
+    environment: uat
     if: github.event.state == 'success' && startsWith(github.event.commit.message, '[CI-DEV]') && github.event.context == 'kustomization/hello-world-dev' # kustomize/dep-name
     runs-on: ubuntu-latest
     steps:
