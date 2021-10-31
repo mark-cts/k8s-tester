@@ -14,7 +14,7 @@ jobs:
   update-live:
     name: Update Live Image
     environment: live
-    if: github.event.state == 'success' && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.message, '[CI-uat]') && github.event.context == 'kustomization/hello-world-uat' # kustomize/dep-name
+    if: github.event.state == 'success' && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.message, 'uat') && github.event.context == 'kustomization/hello-world-uat' # kustomize/dep-name
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -51,4 +51,4 @@ jobs:
           add: infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
-          message: "[CI-${{ env.ENVIRONMENT }}] Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.IMAGE_TAG }}"
+          message: "Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.IMAGE_TAG }}"

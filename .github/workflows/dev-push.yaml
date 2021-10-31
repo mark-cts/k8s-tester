@@ -63,4 +63,4 @@ jobs:
           add: infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
-          message: "[CI-${{ env.ENVIRONMENT }}] Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.GITHUB_SHA }}"
+          message: "Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.GITHUB_SHA }}"

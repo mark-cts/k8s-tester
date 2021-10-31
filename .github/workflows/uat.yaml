@@ -13,7 +13,7 @@ jobs:
   update-uat:
     name: Update UAT Image
     environment: uat
-    if: github.event.state == 'success'  && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.message, '[CI-dev]') && github.event.context == 'kustomization/hello-world-dev' # kustomize/dep-name
+    if: github.event.state == 'success'  && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.message, 'dev') && github.event.context == 'kustomization/hello-world-dev' # kustomize/dep-name
     #if: github.event.state == 'success' && github.event.context == 'kustomization/hello-world-dev' # kustomize/dep-name
     runs-on: ubuntu-latest
     steps:
@@ -32,4 +32,4 @@ jobs:
           add: infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
-          message: "[CI-${{ env.ENVIRONMENT }}] Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.IMAGE_TAG }}"
+          message: "Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.IMAGE_TAG }}"
