@@ -17,6 +17,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: imranismail/setup-kustomize@v1
+      - run: |
+          echo ${{ github.event }} | jq
       - name: set image
         run: |
           export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.ENVIRONMENT_PREV }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
@@ -30,4 +32,4 @@ jobs:
           add: infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
-          message: "CI: Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.IMAGE_TAG }}"
+          message: "[CI-${{ env.ENVIRONMENT }}] Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.IMAGE_TAG }}"
