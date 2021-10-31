@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: hello-world-live
-nameSuffix: "-live"
+nameSuffix: -live
 
 resources:
   - ../../base
@@ -9,7 +9,7 @@ resources:
 images:
   - name: hello-world
     newName: europe-west1-docker.pkg.dev/markbox-cts/images/hello-world
-    newTag: "imthegitsha"
+    newTag: 5ac706ea4a36bf6fe222bc00f254cd0a07d733be
 
 commonLabels:
   env: live
