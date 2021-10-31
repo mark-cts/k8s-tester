@@ -43,7 +43,7 @@ jobs:
       - name: Push Image to prod from nonprod
         run: |
           docker pull "${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.IMAGE_TAG }}"
-          docker tag "${{ env.PROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.IMAGE_TAG }}"
+          docker tag "${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.IMAGE_TAG }}" "${{ env.PROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.IMAGE_TAG }}"
           docker push "${{ env.PROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.IMAGE_TAG }}"
       - name: commit
         uses: EndBug/add-and-commit@v7
