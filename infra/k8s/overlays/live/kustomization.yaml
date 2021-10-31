@@ -4,12 +4,12 @@ namespace: hello-world-live
 nameSuffix: -live
 
 resources:
-  - ../../base
+- ../../base
 
 images:
-  - name: hello-world
-    newName: europe-west1-docker.pkg.dev/markbox-cts/images/hello-world
-    newTag: 5ac706ea4a36bf6fe222bc00f254cd0a07d733be
+- name: hello-world
+  newName: europe-west1-docker.pkg.dev/markbox-cts/images/hello-world
+  newTag: 32741b17942f5c22395f424f828b94b029988be0
 
 commonLabels:
   env: live
