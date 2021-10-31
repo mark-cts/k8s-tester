@@ -1,0 +1,34 @@
+name: uat
+
+on:
+  status
+env:
+  IMAGE: hello-world
+  REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
+  PROJECT_ID: markbox-cts
+  ENVIRONMENT_PREV: uat
+  ENVIRONMENT: live
+
+jobs:
+  update-live:
+    name: Update Live Image
+    environment: live
+    if: github.event.state == 'success' && startsWith(github.event.commit.message, '[CI-UAT]') && github.event.context == 'kustomization/hello-world-uat' # kustomize/dep-name
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: imranismail/setup-kustomize@v1
+      - name: set image
+        run: |
+          export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.ENVIRONMENT_PREV }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+          cd infra/k8s/overlays/${{ env.ENVIRONMENT }}/
+          kustomize edit set image ${{ env.IMAGE }}=${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:$IMAGE_TAG
+          kustomize build .
+      - name: commit
+        uses: EndBug/add-and-commit@v7
+        with:
+          add: infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
+          author_name: "ci"
+          author_email: "ci@gingerninja.co"
+          message: "[CI-${{ env.ENVIRONMENT }}] Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.IMAGE_TAG }}"
