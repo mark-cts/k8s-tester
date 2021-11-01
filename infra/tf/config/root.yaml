@@ -1,0 +1,5 @@
+region: europe-west1
+zone: europe-west1-b
+state_prefix_dir: main
+terraform_service_account: tf-sa-poc@markbox-cts.iam.gserviceaccount.com
+project: markbox-cts
