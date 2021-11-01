@@ -87,7 +87,7 @@ jobs:
           filename=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
           cd infra/tf/
           echo "Running plan for $filename projects"
-          TG_ENVIRONMENT=$filename terragrunt plan -no-color --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
+          TG_ENVIRONMENT=$filename terragrunt run-all plan -no-color --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
         continue-on-error: true
       - name: Update Pull Request
         uses: actions/github-script@0.9.0
@@ -121,4 +121,4 @@ jobs:
           filename=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
           echo "Running Apply for $filename projects"
           cd infra/tf/
-          TG_ENVIRONMENT=$filename terragrunt apply -auto-approve --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
+          TG_ENVIRONMENT=$filename terragrunt run-all apply -auto-approve --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
