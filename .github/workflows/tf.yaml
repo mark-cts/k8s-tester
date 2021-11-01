@@ -123,10 +123,17 @@ jobs:
         if: steps.plan.outcome == 'failure'
         run: exit 1
       - name: Terragrunt Apply
+        id: apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           filename=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
           echo "Running Apply for $filename"
           cd infra/tf/
           TG_ENVIRONMENT=$filename terragrunt run-all apply -auto-approve --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
-        # add on apply success to make PR of next env
+      - name: Terragrunt Apply Status
+        if: steps.apply.outcome == 'failure'
+        run: exit 1
+      - name: Set yaml
+        run: |
+          export MODULE=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
+          SHA=${{ github.sha }} yq e '.auto_module_versions.env(MODULE) |= env(SHA)' -i infra/tf/environments/dev.yaml
