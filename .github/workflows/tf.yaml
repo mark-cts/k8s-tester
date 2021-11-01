@@ -86,7 +86,7 @@ jobs:
         run: |
           filename=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
           cd infra/tf/
-          echo "Running plan for $filename projects"
+          echo "Running plan for $filename"
           TG_ENVIRONMENT=$filename terragrunt run-all plan -no-color --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
         continue-on-error: true
       - name: Update Pull Request
@@ -119,6 +119,7 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           filename=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
-          echo "Running Apply for $filename projects"
+          echo "Running Apply for $filename"
           cd infra/tf/
           TG_ENVIRONMENT=$filename terragrunt run-all apply -auto-approve --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
+        # TODO: add steps.apply.outcome == success > make PR with commit sha on NEXT_ENV

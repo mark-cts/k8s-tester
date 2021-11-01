@@ -6,7 +6,7 @@ locals {
       "../environments/${local.var_file}.yaml",
     )))
   )
-  state_prefix = "${lookup(local.vars, "state_prefix_dir", "")}/a/"
+  state_prefix = "${local.var_file}/a/"
 }
 
 generate "provider" {
