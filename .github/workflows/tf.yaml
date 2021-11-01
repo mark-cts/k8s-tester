@@ -4,16 +4,14 @@ on:
     branches:
       - main
     paths:
-      - projects/*.yaml
-      - terraform/**
+      - infra/tf/**
   pull_request:
     paths:
-      - projects/*.yaml
-      - terraform/**
+      - infra/tf/**
 jobs:
   matrix:
     runs-on: ubuntu-latest
-    name: Compile Updated/New Projects files
+    name: Compile Updated/New Environment files
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -25,16 +23,16 @@ jobs:
         uses: tj-actions/changed-files@v1.1.3
         with:
           files: |
-            projects/*yaml
-            terraform/**
+            infra/tf/environments/*yaml
+            infra/tf/terraform/**
       - id: set-matrix
         run: |
           IFS=$'\n'
           x="${{ steps.changed-files-specific.outputs.all_changed_and_modified_files }}"
           echo $x
           if echo "$x" | grep -q "terraform/*"; then 
-            echo "MATCH, terraform changed, applying plan to all projects"
-            s="$(ls projects/*)"
+            echo "MATCH, terraform changed, applying plan to all environments"
+            s="$(ls infra/tf/environments/*)"
             matrix=$(jq -c -n --arg inarr "$s" '{ plans: $inarr | split("\n") }')
           else
             matrix=$(jq -c -n --arg inarr "$x" '{ plans: $inarr | split(" ") }')
@@ -87,8 +85,9 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           filename=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
+          cd infra/tf/
           echo "Running plan for $filename projects"
-          TG_ENVIRONMENT=$filename terragrunt plan -no-color --terragrunt-working-dir terraform/projects --terragrunt-include-external-dependencies --terragrunt-non-interactive
+          TG_ENVIRONMENT=$filename terragrunt plan -no-color --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
         continue-on-error: true
       - name: Update Pull Request
         uses: actions/github-script@0.9.0
@@ -121,4 +120,5 @@ jobs:
         run: |
           filename=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
           echo "Running Apply for $filename projects"
-          TG_ENVIRONMENT=$filename terragrunt apply -auto-approve --terragrunt-working-dir terraform/projects --terragrunt-include-external-dependencies --terragrunt-non-interactive
+          cd infra/tf/
+          TG_ENVIRONMENT=$filename terragrunt apply -auto-approve --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
