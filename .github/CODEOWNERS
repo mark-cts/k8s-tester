@@ -1,0 +1,5 @@
+# default to dev team - anything later in file takes precedence
+*       @mark-cts
+
+# release manager
+/infra/k8s/overlays/live/ @Bltt
