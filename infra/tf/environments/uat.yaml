@@ -1,0 +1,17 @@
+project: markbox-cts
+service_accounts:
+  - hello-world-app-uat
+buckets:
+  - name: hello-world-uat
+    location: EU
+    force_destroy: true
+iam:
+  - kind: Project
+    bindings:
+      "roles/viewer":
+        - "serviceAccount:hello-world-app-uat@markbox-cts.iam.gserviceaccount.com"
+  - kind: StorageBucket
+    resource: hello-world-uat
+    bindings:
+      "roles/storage.objectAdmin":
+        - "serviceAccount:hello-world-app-uat@markbox-cts.iam.gserviceaccount.com"
