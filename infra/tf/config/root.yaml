@@ -2,3 +2,5 @@ region: europe-west1
 zone: europe-west1-b
 terraform_service_account: tf-sa-poc@markbox-cts.iam.gserviceaccount.com
 project: markbox-cts
+git_repo: github.com/mark-cts/k8s-tester.git
+tf_module_dir: infra/tf/terraform
