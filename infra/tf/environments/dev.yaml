@@ -4,7 +4,7 @@ auto_module_versions:
   bucket: 8deb6e38595daf8909f9b1337d06e252dd63eeb4
 project: markbox-cts
 service_accounts:
-  - hello-world-app
+  - hello-world-app-dev
 buckets:
   - name: hello-world-dev
     location: EU
@@ -13,9 +13,9 @@ iam:
   - kind: Project
     bindings:
       "roles/viewer":
-        - "serviceAccount:hello-world-app@markbox-cts.iam.gserviceaccount.com"
+        - "serviceAccount:hello-world-app-dev@markbox-cts.iam.gserviceaccount.com"
   - kind: StorageBucket
     resource: hello-world-dev
     bindings:
       "roles/storage.objectAdmin":
-        - "serviceAccount:hello-world-app@markbox-cts.iam.gserviceaccount.com"
+        - "serviceAccount:hello-world-app-dev@markbox-cts.iam.gserviceaccount.com"
