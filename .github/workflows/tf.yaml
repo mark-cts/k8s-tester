@@ -121,10 +121,14 @@ jobs:
             })
       - name: Terragrunt Plan Status
         if: steps.plan.outcome == 'failure'
-        run: exit 1
+        run: exit 1      
+      - name: Set yaml for DEV
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          export MODULE=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
+          SHA=${{ github.sha }} yq e '.auto_module_versions.env(MODULE) |= env(SHA)' -i infra/tf/environments/dev.yaml
       - name: Terragrunt Apply
         id: apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           filename=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
           echo "Running Apply for $filename"
@@ -133,7 +137,39 @@ jobs:
       - name: Terragrunt Apply Status
         if: steps.apply.outcome == 'failure'
         run: exit 1
-      - name: Set yaml
+      - name: commit
+        uses: EndBug/add-and-commit@v7
+        with:
+          add: infra/tf/environments/dev.yaml
+          author_name: "ci"
+          author_email: "ci@gingerninja.co"
+          message: "Deploy changes from ${{ github.sha }} to DEV"
+      - name: Set yaml for UAT
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           export MODULE=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
-          SHA=${{ github.sha }} yq e '.auto_module_versions.env(MODULE) |= env(SHA)' -i infra/tf/environments/dev.yaml
+          SHA=${{ github.sha }} yq e '.auto_module_versions.env(MODULE) |= env(SHA)' -i infra/tf/environments/uat.yaml
+      - name: Create PR
+        id: pr-uat
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Deploy changes from ${{ github.sha }} to UAT
+          committer: ci <ci@gingerninja.co>
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          signoff: false
+          branch: tf-uat
+          delete-branch: true
+          title: '[CI] Deploy changes from ${{ github.sha }} to UAT'
+          body: |
+            *Automated PR*
+            This PR is created by CI
+
+            Deploying ${{ github.sha }} to UAT
+          labels: |
+            automated
+          assignees: Bltt
+          reviewers: mark-cts
+          team-reviewers: |
+            owners
+          draft: false
