@@ -1,4 +1,4 @@
-name: Ki Landing Zone Projects
+name: Terraform
 on:
   push:
     branches:
