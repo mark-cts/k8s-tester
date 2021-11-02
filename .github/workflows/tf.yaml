@@ -153,11 +153,22 @@ jobs:
           author_email: "ci@gingerninja.co"
           message: "Deploy changes to ${{ env.next_env }} from ${{ env.cur_env }}"
           push: false
-      - name: get original PR
+      - name: get original commit # todo: check this always works
         run: |
-          export COMM=$(git rev-list main -1 infra/tf/environments/${{ env.cur_env }}.yaml)
-          export RESP=$(curl -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/mark-cts/k8s-tester/commits/$COMM/pulls)
-          echo $RESP
+          export COMM=$(git rev-list main -1 infra/tf/environments/dev.yaml)
+          echo "orig_commit=$COMM" >> $GITHUB_ENV
+      - name: get original PR
+        uses: octokit/request-action@v2.x
+        id: orig-pr
+        with:
+          route: GET /repos/{owner}/{repo}/commits/${{ env.orig_commit }}/pulls
+          owner: mark-cts
+          repo: k8s-tester
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      - name: debug output
+        run: |
+          echo "${{ steps.orig-pr.outputs.data }}" | jq
       - name: Create PR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: create-pr
@@ -176,6 +187,8 @@ jobs:
             *Automated PR*
 
             This PR is to deploy changes to *${{ env.next_env }}* from *${{ env.cur_env }}*
+
+            Original PR: #33
           labels: |
             automated
             infra
