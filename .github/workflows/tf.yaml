@@ -82,6 +82,7 @@ jobs:
         with:
           service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
           export_default_credentials: true
+          credentials_file_path: /tmp/key.json
 
       - name: Terragrunt Validate
         id: validate
@@ -145,7 +146,9 @@ jobs:
           echo "next_env=$next_env" >> $GITHUB_ENV
           
           VAL=$(yq e '.auto_module_versions' infra/tf/environments/${cur_env}.yaml) yq e '.auto_module_versions |= env(VAL)' -i infra/tf/environments/${next_env}.yaml
+          VAL=$(yq e '.auto_module_versions' infra/tf/environments/${cur_env}.yaml) yq e '.auto_module_versions |= env(VAL)' infra/tf/environments/${next_env}.yaml
       - name: commit ${{ matrix.plans }}
+        id: commit
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: EndBug/add-and-commit@v7
         with:
@@ -154,6 +157,9 @@ jobs:
           author_email: "ci@gingerninja.co"
           message: "Deploy changes to ${{ env.next_env }} from ${{ env.cur_env }}"
           push: false
+      - name: Commit Status
+        if: steps.commit.outputs.commit == 'false'
+        run: exit 1
       - name: Create PR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: create-pr
