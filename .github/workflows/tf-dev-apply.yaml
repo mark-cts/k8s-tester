@@ -64,7 +64,8 @@ jobs:
           export SHA="${{ github.event.pull_request.head.sha }}"
           for mod in $list
           do
-              yq e '.auto_module_versions[strenv(mod)] |= strenv(SHA)' -i infra/tf/environments/dev.yaml
+              MODULENAME=$mod yq e '.auto_module_versions[strenv(MODULENAME)] |= strenv(SHA)' infra/tf/environments/uat.yaml
+              MODULENAME=$mod yq e '.auto_module_versions[strenv(MODULENAME)] |= strenv(SHA)' -i infra/tf/environments/uat.yaml
           done
       - name: commit uat
         uses: EndBug/add-and-commit@v7
