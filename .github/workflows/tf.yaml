@@ -157,9 +157,6 @@ jobs:
           author_email: "ci@gingerninja.co"
           message: "Deploy changes to ${{ env.next_env }} from ${{ env.cur_env }}"
           push: false
-      - name: Commit Status
-        if: steps.commit.outputs.commit == false
-        run: exit 1
       - name: Create PR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: create-pr
