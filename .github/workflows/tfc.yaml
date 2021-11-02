@@ -4,10 +4,10 @@ on:
     branches:
       - main
     paths:
-      - infra/tf/**
+      - infra/tf/environments/**
   pull_request:
     paths:
-      - infra/tf/**
+      - infra/tf/environments/**
 jobs:
   matrix:
     runs-on: ubuntu-latest

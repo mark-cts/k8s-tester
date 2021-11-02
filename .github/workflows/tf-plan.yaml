@@ -1,0 +1,66 @@
+name: Terraform Code
+on:
+  pull_request:
+    paths:
+      - infra/tf/terraform/**
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    name: "Terragrunt Plan"
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.0.4
+          terraform_wrapper: false
+      - name: Setup Terragrunt
+        uses: autero1/action-terragrunt@v1.1.0
+        with:
+          terragrunt_version: 0.31.4
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
+          export_default_credentials: true
+
+      - name: Terragrunt Validate
+        id: validate
+        run : |
+          cd infra/tf/
+          echo "Validating"
+          TG_ENVIRONMENT=dev terragrunt run-all validate -no-color --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
+      - name: Terragrunt Plan
+        id: plan
+        run: |
+          cd infra/tf/
+          echo "Running plan for $filename"
+          TG_ENVIRONMENT=dev terragrunt run-all plan -no-color --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
+        continue-on-error: true
+      - name: Update Pull Request
+        uses: actions/github-script@0.9.0
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Validation for ${{ matrix.plans }} 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan for ${{ matrix.plans }}📖\`${{ steps.plan.outcome }}\`
+            <details><summary>Show Plan</summary>
+            \`\`\`\n
+            ${{ env.PLAN }}
+            \`\`\`
+            </details>
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+      - name: Terragrunt Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
