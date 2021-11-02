@@ -78,12 +78,12 @@ jobs:
     
       - name: Set yaml for DEV
         run: |
-          export MODULE=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
+          export MODULE=$(basename ${{ needs.matrix.outputs.matrix }} | cut -f 1 -d '.' )
           SHA=${{ github.sha }} yq e '.auto_module_versions.env(MODULE) |= env(SHA)' -i infra/tf/environments/dev.yaml
       - name: Terragrunt Apply
         id: apply
         run: |
-          filename=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
+          filename=$(basename ${{ needs.matrix.outputs.matrix }} | cut -f 1 -d '.' )
           echo "Running Apply"
           cd infra/tf/
           TG_ENVIRONMENT=dev terragrunt run-all apply -auto-approve --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
@@ -99,7 +99,7 @@ jobs:
           message: "Deploy changes to DEV from ${{ github.sha }}"
       - name: Set yaml for UAT
         run: |
-          export MODULE=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
+          export MODULE=$(basename ${{ needs.matrix.outputs.matrix }} | cut -f 1 -d '.' )
           SHA=${{ github.sha }} yq e '.auto_module_versions.env(MODULE) |= env(SHA)' -i infra/tf/environments/uat.yaml
       - name: commit uat
         uses: EndBug/add-and-commit@v7
