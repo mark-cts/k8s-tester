@@ -29,6 +29,7 @@ jobs:
           for direct in $x
           do
                   dirname=$(dirname -- ${direct})
+                  echo "${dirname}"
                   echo "${dirname}" >> list
           done
           LIST=$(cat list | uniq)
