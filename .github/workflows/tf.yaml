@@ -153,6 +153,11 @@ jobs:
           author_email: "ci@gingerninja.co"
           message: "Deploy changes to ${{ env.next_env }} from ${{ env.cur_env }}"
           push: false
+      - name: get original PR
+        run: |
+          export COMM=$(git rev-list main -1 infra/tf/environments/${{ env.cur_env }}.yaml)
+          export RESP=$(curl -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/mark-cts/k8s-tester/commits/$COMM/pulls)
+          echo $RESP
       - name: Create PR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: create-pr
@@ -169,11 +174,11 @@ jobs:
           title: '[CI] Deploy changes to ${{ env.next_env }} from ${{ env.cur_env }}'
           body: |
             *Automated PR*
-            This PR is created by CI
 
-            Deploy changes to ${{ env.next_env }} from ${{ env.cur_env }}
+            This PR is to deploy changes to *${{ env.next_env }}* from *${{ env.cur_env }}*
           labels: |
             automated
+            infra
           assignees: Bltt
           reviewers: mark-cts
           team-reviewers: |
