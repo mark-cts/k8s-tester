@@ -62,7 +62,7 @@ jobs:
           export SHA="${{ github.sha }}"
           for mod in $list
           do
-              MODULE=$mod SHA=$SHA yq e '.auto_module_versions.env(MODULE) |= env(SHA)' -i infra/tf/environments/dev.yaml
+              yq e '.auto_module_versions[strenv(mod)] |= strenv(SHA)' -i infra/tf/environments/dev.yaml
           done
       - name: commit uat
         uses: EndBug/add-and-commit@v7
