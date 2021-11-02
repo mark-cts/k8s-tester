@@ -8,6 +8,12 @@ on:
   pull_request:
     paths:
       - infra/tf/environments/**
+env:
+  # to track the next env
+  after_dev: uat
+  after_uat: live
+  after_live: demo
+  after_demo: nil
 jobs:
   matrix:
     runs-on: ubuntu-latest

@@ -34,6 +34,7 @@ jobs:
           files: |
             infra/tf/terraform/**
       - id: set-matrix
+        name: sort files
         run: |
           IFS=$'\n'
           x="${{ steps.changed-files-specific.outputs.all_changed_and_modified_files }}"
@@ -49,6 +50,7 @@ jobs:
           echo "::set-output name=matrix::$LIST"
       - name: Set yaml for DEV
         run: |
+          yq -V
           export list="${{ steps.set-matrix.outputs.matrix }}"
           export SHA="${{ github.event.pull_request.head.sha }}"
           for mod in $list
