@@ -2,6 +2,7 @@ terraform {
   experiments = [module_variable_optional_attrs]
 }
 
+# GCS Bucket
 resource "google_storage_bucket" "buckets" {
   for_each      = { for bucket in var.buckets: bucket.name => bucket }
   name          = each.value.name
