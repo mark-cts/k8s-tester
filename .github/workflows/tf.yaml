@@ -134,18 +134,21 @@ jobs:
         if: steps.apply.outcome == 'failure'
         run: exit 1
       # make PR On next env
-      - name: update next environment
+      - name: collate env vars
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |          
           export cur_env=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
           eval next_env='$'after_$cur_env
           echo "cur_env=$cur_env" >> $GITHUB_ENV
           echo "next_env=$next_env" >> $GITHUB_ENV
+      - name: update next environment
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != "nil"
+        run: |          
           VAL=$(yq e '.auto_module_versions' infra/tf/environments/${cur_env}.yaml) yq e '.auto_module_versions |= env(VAL)' -i infra/tf/environments/${next_env}.yaml
           VAL=$(yq e '.auto_module_versions' infra/tf/environments/${cur_env}.yaml) yq e '.auto_module_versions |= env(VAL)' infra/tf/environments/${next_env}.yaml
       - name: commit ${{ matrix.plans }}
         id: commit
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != "nil"
         uses: EndBug/add-and-commit@v7
         with:
           add: infra/tf/environments/${{ env.next_env }}.yaml
@@ -154,12 +157,12 @@ jobs:
           message: "Deploy changes to ${{ env.next_env }} from ${{ env.cur_env }}"
           push: false
       - name: get original commit # todo: check this always works
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != "nil"
         run: |
           export COMM=$(git rev-list main -1 infra/tf/environments/dev.yaml)
           echo "orig_commit=$COMM" >> $GITHUB_ENV
       - name: get original PR
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != "nil"
         uses: octokit/request-action@v2.x
         id: orig-pr
         with:
@@ -169,11 +172,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       - name: debug output
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != "nil"
         run: |
           echo "${{ steps.orig-pr.outputs.data }}" | jq
       - name: Create PR
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != "nil"
         id: create-pr
         uses: peter-evans/create-pull-request@v3
         with:
