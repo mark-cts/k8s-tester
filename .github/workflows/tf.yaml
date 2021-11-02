@@ -156,7 +156,7 @@ jobs:
           push: false
       - name: Create PR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        id: pr-${{ matrix.plans }}
+        id: create-pr
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
