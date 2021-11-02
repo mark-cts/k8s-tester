@@ -1,7 +1,7 @@
 # Do not touch key auto_module_versions: managed by GHA
 auto_module_versions:
   project: 05cfc5701d2a9f3afaf0099b0672a48d4e1ef5a8
-  bucket: ce2ad0e1c55c98c68aeb7626ba4ba07a68b6e15a
+  bucket: 97a9b63629814961da66d0957f4e5e89bde0203e
   '': f18f48520cc30019a4596502409fb5521c64a33f
 project: markbox-cts
 service_accounts:
