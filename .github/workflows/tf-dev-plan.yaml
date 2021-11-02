@@ -44,6 +44,7 @@ jobs:
                   echo "$(basename ${dirname})" >> list
           done
           LIST=$(cat list | uniq)
+          rm list
           echo $LIST
           echo "::set-output name=matrix::$LIST"
       - name: Set yaml for DEV
