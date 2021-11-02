@@ -1,4 +1,4 @@
-name: Terraform Code
+name: Terraform Dev Apply
 on:
   push:
     branches:
