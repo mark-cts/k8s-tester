@@ -50,7 +50,6 @@ jobs:
       - name: Terragrunt Apply
         id: apply
         run: |
-          filename=$(basename ${{ needs.matrix.outputs.matrix }} | cut -f 1 -d '.' )
           echo "Running Apply"
           cd infra/tf/
           TG_ENVIRONMENT=dev terragrunt run-all apply -auto-approve --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
@@ -59,11 +58,11 @@ jobs:
         run: exit 1
       - name: Set yaml for UAT
         run: |
-          export list=${{ steps.set-matrix.outputs.matrix }}
-          export SHA=${{ github.sha }}
-          for MODULE in $list
+          export list="${{ steps.set-matrix.outputs.matrix }}"
+          export SHA="${{ github.sha }}"
+          for mod in $list
           do
-              yq e '.auto_module_versions.env(MODULE) |= env(SHA)' -i infra/tf/environments/uat.yaml
+              MODULE=$mod SHA=$SHA yq e '.auto_module_versions.env(MODULE) |= env(SHA)' -i infra/tf/environments/dev.yaml
           done
       - name: commit uat
         uses: EndBug/add-and-commit@v7

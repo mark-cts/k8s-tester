@@ -47,11 +47,11 @@ jobs:
           echo "::set-output name=matrix::$LIST"
       - name: Set yaml for DEV
         run: |
-          export list=${{ steps.set-matrix.outputs.matrix }}
-          export SHA=${{ github.sha }}
-          for MODULE in $list
+          export list="${{ steps.set-matrix.outputs.matrix }}"
+          export SHA="${{ github.sha }}"
+          for mod in $list
           do
-              yq e '.auto_module_versions.env(MODULE) |= env(SHA)' -i infra/tf/environments/dev.yaml
+              MODULE=$mod SHA=$SHA yq e '.auto_module_versions.env(MODULE) |= env(SHA)' -i infra/tf/environments/dev.yaml
           done
       - name: commit dev
         uses: EndBug/add-and-commit@v7
