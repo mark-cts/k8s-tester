@@ -1,0 +1,21 @@
+# Do not touch key auto_module_versions: managed by GHA
+auto_module_versions:  
+  project: 05cfc5701d2a9f3afaf0099b0672a48d4e1ef5a8
+  bucket: 8deb6e38595daf8909f9b1337d06e252dd63eeb4
+project: markbox-cts
+service_accounts:
+  - hello-world-app-demo
+buckets:
+  - name: hello-world-demo
+    location: EU
+    force_destroy: true
+iam:
+  - kind: Project
+    bindings:
+      "roles/viewer":
+        - "serviceAccount:hello-world-app-demo@markbox-cts.iam.gserviceaccount.com"
+  - kind: StorageBucket
+    resource: hello-world-demo
+    bindings:
+      "roles/storage.objectAdmin":
+        - "serviceAccount:hello-world-app-demo@markbox-cts.iam.gserviceaccount.com"
