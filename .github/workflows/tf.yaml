@@ -158,7 +158,7 @@ jobs:
         id: create-pr
         uses: peter-evans/create-pull-request@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_TOKEN }}
           base: main # branch to merge into
           commit-message: Deploy changes to ${{ env.next_env }} from ${{ env.cur_env }}
           committer: ci <ci@gingerninja.co>
