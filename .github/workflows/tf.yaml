@@ -151,6 +151,7 @@ jobs:
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          base: main # branch to merge into
           commit-message: Deploy changes from ${{ github.sha }} to UAT
           committer: ci <ci@gingerninja.co>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
