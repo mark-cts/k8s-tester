@@ -134,31 +134,42 @@ jobs:
       - name: Terragrunt Apply Status
         if: steps.apply.outcome == 'failure'
         run: exit 1
-      - name: commit
+      - name: commit dev
         uses: EndBug/add-and-commit@v7
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         with:
           add: infra/tf/environments/dev.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
-          message: "Deploy changes from ${{ github.sha }} to DEV"
+          message: "Deploy changes to DEV from ${{ github.sha }}"
       - name: Set yaml for UAT
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           export MODULE=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
           SHA=${{ github.sha }} yq e '.auto_module_versions.env(MODULE) |= env(SHA)' -i infra/tf/environments/uat.yaml
+      - name: commit uat
+        uses: EndBug/add-and-commit@v7
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        with:
+          add: infra/tf/environments/dev.yaml
+          author_name: "ci"
+          author_email: "ci@gingerninja.co"
+          message: "Deploy changes to UAT from ${{ github.sha }}"
+          push: false
       - name: Create PR
         id: pr-uat
         uses: peter-evans/create-pull-request@v3
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           base: main # branch to merge into
-          commit-message: Deploy changes from ${{ github.sha }} to UAT
+          commit-message: Deploy changes to UAT from ${{ github.sha }}
           committer: ci <ci@gingerninja.co>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           signoff: false
           branch: tf-uat
           delete-branch: true
-          title: '[CI] Deploy changes from ${{ github.sha }} to UAT'
+          title: '[CI] Deploy changes to UAT from ${{ github.sha }}'
           body: |
             *Automated PR*
             This PR is created by CI
