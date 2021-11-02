@@ -145,7 +145,7 @@ jobs:
           echo "next_env=$next_env" >> $GITHUB_ENV
           
           VAL=$(yq e '.auto_module_versions' infra/tf/environments/${cur_env}.yaml) yq e '.auto_module_versions |= env(VAL)' -i infra/tf/environments/${next_env}.yaml
-      - name: commit ${{ env.next_env }}
+      - name: commit ${{ matrix.plans }}
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: EndBug/add-and-commit@v7
         with:
@@ -156,7 +156,7 @@ jobs:
           push: false
       - name: Create PR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        id: pr-${{ env.next_env }}
+        id: create-pr
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -172,7 +172,7 @@ jobs:
             *Automated PR*
             This PR is created by CI
 
-            Deploying ${{ github.event.pull_request.head.sha }} to ${{ env.next_env }}
+            Deploy changes to ${{ env.next_env }} from ${{ env.cur_env }}
           labels: |
             automated
           assignees: Bltt
