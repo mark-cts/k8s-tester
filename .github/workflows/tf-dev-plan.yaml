@@ -25,6 +25,7 @@ jobs:
         with:
           service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
           export_default_credentials: true
+          credentials_file_path: /tmp/key.json
 
       - name: Get specific changed files
         id: changed-files-specific
