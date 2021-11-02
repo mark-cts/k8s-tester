@@ -141,7 +141,7 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |          
           export cur_env=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
-          export next_env="after_${cur_env}"
+          export next_env="$after_${cur_env}"
           echo "next_env=$next_env" >> $GITHUB_ENV
           
           VAL=$(yq e '.auto_module_versions' infra/tf/environments/${cur_env}.yaml) yq e '.auto_module_versions |= env(VAL)' -i infra/tf/environments/${next_env}.yaml
