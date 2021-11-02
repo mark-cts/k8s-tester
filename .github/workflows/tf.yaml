@@ -8,6 +8,10 @@ on:
   pull_request:
     paths:
       - infra/tf/environments/**
+  workflow_run:
+    workflows: ["Terraform Dev Update"]
+    types:
+      - completed
 env:
   # to track the next env
   after_dev: uat

@@ -1,4 +1,4 @@
-name: Terraform Dev Plan
+name: Terraform Dev Update
 on:
   pull_request:
     paths:
