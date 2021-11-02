@@ -50,9 +50,10 @@ jobs:
       - name: Set yaml for DEV
         run: |
           export list="${{ steps.set-matrix.outputs.matrix }}"
-          export SHA="${{ github.sha }}"
+          export SHA="${{ github.event.pull_request.head.sha }}"
           for mod in $list
           do
+              yq e '.auto_module_versions[strenv(mod)] |= strenv(SHA)' infra/tf/environments/dev.yaml
               yq e '.auto_module_versions[strenv(mod)] |= strenv(SHA)' -i infra/tf/environments/dev.yaml
           done
       - name: commit dev
@@ -61,7 +62,7 @@ jobs:
           add: infra/tf/environments/dev.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
-          message: "Deploy changes to DEV from ${{ github.sha }}"
+          message: "Deploy changes to DEV from ${{ github.event.pull_request.head.sha }}"
       - name: Terragrunt Validate
         id: validate
         run : |

@@ -61,7 +61,7 @@ jobs:
       - name: Set yaml for UAT
         run: |
           export list="${{ steps.set-matrix.outputs.matrix }}"
-          export SHA="${{ github.sha }}"
+          export SHA="${{ github.event.pull_request.head.sha }}"
           for mod in $list
           do
               yq e '.auto_module_versions[strenv(mod)] |= strenv(SHA)' -i infra/tf/environments/dev.yaml
@@ -72,7 +72,7 @@ jobs:
           add: infra/tf/environments/uat.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
-          message: "Deploy changes to UAT from ${{ github.sha }}"
+          message: "Deploy changes to UAT from ${{ github.event.pull_request.head.sha }}"
           push: false
       - name: Create PR
         id: pr-uat
@@ -80,18 +80,18 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           base: main # branch to merge into
-          commit-message: Deploy changes to UAT from ${{ github.sha }}
+          commit-message: Deploy changes to UAT from ${{ github.event.pull_request.head.sha }}
           committer: ci <ci@gingerninja.co>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           signoff: false
           branch: tf-uat
           delete-branch: true
-          title: '[CI] Deploy changes to UAT from ${{ github.sha }}'
+          title: '[CI] Deploy changes to UAT from ${{ github.event.pull_request.head.sha }}'
           body: |
             *Automated PR*
             This PR is created by CI
 
-            Deploying ${{ github.sha }} to UAT
+            Deploying ${{ github.event.pull_request.head.sha }} to UAT
           labels: |
             automated
           assignees: Bltt
