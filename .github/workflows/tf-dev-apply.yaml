@@ -8,7 +8,6 @@ on:
 jobs:
   apply:
     runs-on: ubuntu-latest
-    needs: matrix
     name: "Terraform Apply"
     steps:
       - name: checkout
