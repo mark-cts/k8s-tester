@@ -2,7 +2,6 @@
 auto_module_versions:
   project: 05cfc5701d2a9f3afaf0099b0672a48d4e1ef5a8
   bucket: 447baed879b8fd0bb256b39aa02847a4b1485566
-  '': f18f48520cc30019a4596502409fb5521c64a33f
 project: markbox-cts
 service_accounts:
   - hello-world-app-dev
