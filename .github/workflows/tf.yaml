@@ -154,10 +154,12 @@ jobs:
           message: "Deploy changes to ${{ env.next_env }} from ${{ env.cur_env }}"
           push: false
       - name: get original commit # todo: check this always works
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           export COMM=$(git rev-list main -1 infra/tf/environments/dev.yaml)
           echo "orig_commit=$COMM" >> $GITHUB_ENV
       - name: get original PR
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: octokit/request-action@v2.x
         id: orig-pr
         with:
@@ -167,6 +169,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       - name: debug output
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           echo "${{ steps.orig-pr.outputs.data }}" | jq
       - name: Create PR
