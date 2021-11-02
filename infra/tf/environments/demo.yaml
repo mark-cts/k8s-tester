@@ -6,7 +6,7 @@ project: markbox-cts
 service_accounts:
   - hello-world-app-demo
 buckets:
-  - name: hello-world-demo
+  - name: hello-world-demo-markbox
     location: EU
     force_destroy: true
 iam:
@@ -15,7 +15,7 @@ iam:
       "roles/viewer":
         - "serviceAccount:hello-world-app-demo@markbox-cts.iam.gserviceaccount.com"
   - kind: StorageBucket
-    resource: hello-world-demo
+    resource: hello-world-demo-markbox
     bindings:
       "roles/storage.objectAdmin":
         - "serviceAccount:hello-world-app-demo@markbox-cts.iam.gserviceaccount.com"
