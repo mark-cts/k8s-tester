@@ -10,8 +10,9 @@ resource "google_storage_bucket" "buckets" {
   force_destroy = coalesce(each.value.force_destroy, false)
   storage_class = coalesce(each.value.storage_class, "STANDARD")
   project       = var.project
+  uniform_bucket_level_access = coalesce(each.value.uniform_bucket_level_access, true)
+  
   versioning {
     enabled = coalesce(each.value.versioning, false)
   }
-  uniform_bucket_level_access = coalesce(each.value.uniform_bucket_level_access, true)
 }
