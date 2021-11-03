@@ -1,4 +1,4 @@
-name: Terraform Dev Update
+name: Terraform Code Change
 on:
   pull_request:
     paths:
@@ -6,7 +6,8 @@ on:
 jobs:
   plan:
     runs-on: ubuntu-latest
-    name: "Terragrunt Plan"
+    if: github.event.pusher.name != 'ci'
+    name: "Validate and Commit Dev versions"
     steps:
       - name: checkout
         uses: actions/checkout@v2

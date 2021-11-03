@@ -18,7 +18,7 @@ env:
 jobs:
   matrix:
     runs-on: ubuntu-latest
-    name: Compile Updated/New Environment files
+    name: Compile Updated/New files
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
