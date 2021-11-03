@@ -163,14 +163,16 @@ jobs:
           echo "orig_commit=$COMM" >> $GITHUB_ENV
       - name: get original PR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
-        uses: octokit/request-action@v2.x
+        uses: actions/github-script@v5
         id: orig-pr
         with:
-          route: GET /repos/{owner}/{repo}/commits/${{ env.orig_commit }}/pulls
-          owner: mark-cts
-          repo: k8s-tester
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          github-token: ${{ secrets.GH_TOKEN }}
+          script: |
+            github.rest.repos.listPullRequestsAssociatedWithCommit({
+              owner: 'mark-cts', 
+              repo: 'k8s-tester', 
+              commit: ${{ env.orig_commit }}
+            })
       - name: debug output
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
         run: |
