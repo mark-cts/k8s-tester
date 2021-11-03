@@ -177,6 +177,9 @@ jobs:
             })
             const numb = result.data[0].number
             return numb
+      - name: debug output
+        run: |
+          echo "${{ steps.orig-pr.output.result }}"
       - name: Create PR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
         id: create-pr
