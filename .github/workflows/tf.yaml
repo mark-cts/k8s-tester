@@ -178,7 +178,8 @@ jobs:
       - name: debug output
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
         run: |
-          echo '${{ steps.orig-pr.outputs.result }}' | jq .
+          export resp=${{ steps.orig-pr.outputs.result }}
+          echo $resp | jq .
       - name: Create PR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
         id: create-pr
