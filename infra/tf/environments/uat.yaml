@@ -1,4 +1,4 @@
-# DO NOT touch key auto_module_versions: managed by GHA
+# Do NOT touch key auto_module_versions: managed by GHA
 auto_module_versions:
   project: 05cfc5701d2a9f3afaf0099b0672a48d4e1ef5a8
   bucket: 2df43ae7ed2d9aa970ba808c4e2573eab469f8f5
