@@ -1,7 +1,7 @@
 # Do NOT touch key auto_module_versions: managed by GHA
 auto_module_versions:
   project: 05cfc5701d2a9f3afaf0099b0672a48d4e1ef5a8
-  bucket: 2df43ae7ed2d9aa970ba808c4e2573eab469f8f5
+  bucket: 405bd02397e9a872b05e32c10e4726767c1ea302
 project: markbox-cts
 service_accounts:
   - hello-world-app-live
