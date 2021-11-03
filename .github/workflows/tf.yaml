@@ -176,7 +176,8 @@ jobs:
               commit_sha: origcommit
             })
             console.log(result)
-            console.log(result.data.number)
+            console.log(result.data)
+            console.log(result.data[0].number)
             return result
       - name: debug output
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
