@@ -170,11 +170,13 @@ jobs:
           script: |
             const origcommit = `${{ env.orig_commit }}`
 
-            return github.rest.repos.listPullRequestsAssociatedWithCommit({
+            const result = await github.rest.repos.listPullRequestsAssociatedWithCommit({
               owner: context.repo.owner,
               repo: context.repo.repo,
               commit_sha: origcommit
             })
+            console.log(result)
+            return result
       - name: debug output
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
         run: |
