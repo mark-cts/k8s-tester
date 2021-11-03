@@ -178,9 +178,6 @@ jobs:
             const numb = result.data[0].number
             console.log(numb)
             return numb
-      - name: debug output
-        run: |
-          echo "${{ steps.origpr.outputs.result }}"
       - name: Create PR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
         id: create-pr
@@ -200,7 +197,7 @@ jobs:
 
             This PR is to deploy changes to *${{ env.next_env }}* from *${{ env.cur_env }}*
 
-            Original PR: #${{ steps.orig-pr.outputs.result }}
+            Original PR: #${{ steps.origpr.outputs.result }}
           labels: |
             automated
             infra
