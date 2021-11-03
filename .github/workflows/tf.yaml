@@ -170,7 +170,7 @@ jobs:
           script: |
             const origcommit = `${{ env.orig_commit }}`
 
-            github.rest.repos.listPullRequestsAssociatedWithCommit({
+            return github.rest.repos.listPullRequestsAssociatedWithCommit({
               owner: context.repo.owner,
               repo: context.repo.repo,
               commit_sha: origcommit
