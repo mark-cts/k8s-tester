@@ -6,6 +6,7 @@ on:
     paths:
       - infra/tf/environments/**
   pull_request:
+    types: [opened, synchronize]
     paths:
       - infra/tf/environments/**
 env:
