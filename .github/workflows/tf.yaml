@@ -164,7 +164,7 @@ jobs:
       - name: get original PR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
         uses: actions/github-script@v5
-        id: orig-pr
+        id: origpr
         with:
           github-token: ${{ secrets.GH_TOKEN }}
           script: |
@@ -176,10 +176,11 @@ jobs:
               commit_sha: origcommit
             })
             const numb = result.data[0].number
+            console.log(numb)
             return numb
       - name: debug output
         run: |
-          echo "${{ steps.orig-pr.output.result }}"
+          echo "${{ steps.origpr.outputs.result }}"
       - name: Create PR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
         id: create-pr
@@ -199,7 +200,7 @@ jobs:
 
             This PR is to deploy changes to *${{ env.next_env }}* from *${{ env.cur_env }}*
 
-            Original PR: #${{ steps.orig-pr.output.result }}
+            Original PR: #${{ steps.orig-pr.outputs.result }}
           labels: |
             automated
             infra
