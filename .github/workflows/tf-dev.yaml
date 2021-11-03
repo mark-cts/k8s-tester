@@ -11,6 +11,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
         with:
+          token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
       - uses: hashicorp/setup-terraform@v1
         with:
