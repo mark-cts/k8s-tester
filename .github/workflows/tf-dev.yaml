@@ -6,7 +6,7 @@ on:
 jobs:
   plan:
     runs-on: ubuntu-latest
-    if: github.event.pusher.name != "ci"
+    if: github.event.pusher.name != 'ci'
     name: "Validate and Commit Dev versions"
     steps:
       - name: checkout
