@@ -175,15 +175,8 @@ jobs:
               repo: context.repo.repo,
               commit_sha: origcommit
             })
-            console.log(result)
-            console.log(result.data)
-            console.log(result.data[0].number)
-            return result
-      - name: debug output
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
-        run: |
-          export resp=${{ steps.orig-pr.outputs.result }}
-          echo $resp | jq .
+            const numb = result.data[0].number
+            return numb
       - name: Create PR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
         id: create-pr
@@ -203,7 +196,7 @@ jobs:
 
             This PR is to deploy changes to *${{ env.next_env }}* from *${{ env.cur_env }}*
 
-            Original PR: #33
+            Original PR: #${{ steps.orig-pr.output.numb }}
           labels: |
             automated
             infra
