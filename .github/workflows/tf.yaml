@@ -196,7 +196,7 @@ jobs:
 
             This PR is to deploy changes to *${{ env.next_env }}* from *${{ env.cur_env }}*
 
-            Original PR: #${{ steps.orig-pr.output.numb }}
+            Original PR: #${{ steps.orig-pr.output.result }}
           labels: |
             automated
             infra
