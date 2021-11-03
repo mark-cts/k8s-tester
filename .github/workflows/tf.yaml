@@ -173,7 +173,7 @@ jobs:
             github.rest.repos.listPullRequestsAssociatedWithCommit({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              commit: origcommit"
+              commit: origcommit
             })
       - name: debug output
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
