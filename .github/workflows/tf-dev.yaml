@@ -4,7 +4,7 @@ on:
     paths:
       - infra/tf/terraform/**
 jobs:
-  plan:
+  commit-dev:
     runs-on: ubuntu-latest
     if: github.event.pusher.name != 'ci'
     name: "Validate and Commit Dev versions"
@@ -65,7 +65,7 @@ jobs:
           add: infra/tf/environments/dev.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
-          message: "Deploy changes to DEV from ${{ github.event.pull_request.head.sha }}"
+          message: "Deploy changes to dev from ${{ github.event.pull_request.head.sha }}"
       - name: Terragrunt Validate
         id: validate
         run : |
