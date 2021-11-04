@@ -79,4 +79,5 @@ jobs:
         with:
           workflow: Terraform Config
           token: ${{ secrets.GH_TOKEN }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
