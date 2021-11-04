@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - infra/tf/terraform/**
+concurrency: terraform
 jobs:
   commit-dev:
     runs-on: ubuntu-latest
@@ -10,8 +11,9 @@ jobs:
     name: "Validate and Commit Dev versions"
     steps:
       - name: debug
-        run: |
-          echo ${{ github.event }}
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: echo "$GITHUB_CONTEXT"
       - name: checkout
         uses: actions/checkout@v2
         with:
