@@ -1,4 +1,4 @@
-name: App Deploy Live
+name: App Deployer
 
 on:
   status
@@ -7,12 +7,38 @@ env:
   REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
   PROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images-prod
   PROJECT_ID: markbox-cts
-  ENVIRONMENT_PREV: uat
-  ENVIRONMENT: live
+  after_dev: uat
+  after_uat: live
+  after_live: demo
+  after_demo: nil
 
 jobs:
-  update-live:
-    name: Update Live Image
+  build-matrix:
+    name: Build Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      environment_change: ${{ steps.build.outputs.env_change }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Get specific changed envs
+        id: changed-files
+        uses: tj-actions/changed-files@v1.1.3
+        with:
+          sha: ${{ github.event.pull_request.head.sha }}
+          files: |
+            infra/k8s/overlays/*/kustomization.yaml
+      - name: Check changes
+        id: check
+        run: |
+          x="${{ steps.changed-files.outputs.all_changed_and_modified_files }}"
+
+          echo "$x"
+
+  update-env:
+    name: Update Image
+    needs: build-matrix
     environment: live
     if: github.event.state == 'success' && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.commit.message, 'uat') && github.event.context == 'kustomization/hello-world-uat' # kustomize/dep-name
     runs-on: ubuntu-latest
