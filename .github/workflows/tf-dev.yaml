@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - infra/tf/terraform/**
+concurrency: terraform
 jobs:
   commit-dev:
     runs-on: ubuntu-latest
