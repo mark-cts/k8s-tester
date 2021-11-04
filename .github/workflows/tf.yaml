@@ -9,6 +9,7 @@ on:
     types: [opened, synchronize]
     paths:
       - infra/tf/environments/**
+concurrency: terraform
 env:
   # to track the next env
   after_dev: uat
