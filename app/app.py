@@ -11,8 +11,8 @@ def hello_world():
     return "Hello, Docker!"
 
 
-# route test
-@app.route("/test")
+# route tests
+@app.route("/tests")
 def hello_test():
     return "Hello, test!"
 
