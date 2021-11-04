@@ -13,6 +13,7 @@ resource "google_storage_bucket" "buckets" {
   uniform_bucket_level_access = coalesce(each.value.uniform_bucket_level_access, true)
 
   versioning {
+    # asd
     enabled = true
   }
 }
