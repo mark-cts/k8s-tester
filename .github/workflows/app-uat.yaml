@@ -33,3 +33,29 @@ jobs:
           author_name: "ci"
           author_email: "ci@gingerninja.co"
           message: "Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.IMAGE_TAG }}"
+          push: false      
+      - name: Create PR
+        id: create-pr
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          base: main # branch to merge into
+          commit-message: Deploy changes to uat from dev
+          committer: ci <ci@gingerninja.co>
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          signoff: false
+          branch: app-${{ env.next_env }}
+          delete-branch: true
+          title: '[CI] Deploy changes to uat from dev'
+          body: |
+            *Automated PR*
+
+            This PR is to deploy changes to uat from dev
+          labels: |
+            automated
+            infra
+          assignees: Bltt
+          reviewers: mark-cts
+          team-reviewers: |
+            owners
+          draft: false
