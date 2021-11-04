@@ -9,7 +9,7 @@ on:
     types: [opened, synchronize]
     paths:
       - infra/tf/environments/**
-concurrency: terraform
+  workflow_dispatch:
 env:
   # to track the next env
   after_dev: uat
@@ -17,8 +17,37 @@ env:
   after_live: demo
   after_demo: nil
 jobs:
+  check:
+    outputs: 
+      check: ${{ steps.check.outputs.check }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+      - name: Get specific changed envs
+        id: changed-files
+        uses: tj-actions/changed-files@v1.1.3
+        with:
+          sha: ${{ github.event.pull_request.head.sha }}
+          files: |
+            infra/tf/terraform/**
+      - name: Check changes
+        id: check
+        run: |
+          x="${{ steps.changed-files.outputs.all_changed_and_modified_files }}"
+          if [ -z "$x" ]
+          then
+              check="false"
+          else
+              check="true"
+          fi
+          echo "::set-output name=check::$check"
   matrix:
     runs-on: ubuntu-latest
+    needs: check
+    if: needs.check.result == 'success' && needs.check.outputs.check == 'true'
     name: Compile Updated/New files
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}

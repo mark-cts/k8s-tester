@@ -3,7 +3,6 @@ on:
   pull_request:
     paths:
       - infra/tf/terraform/**
-concurrency: terraform
 jobs:
   commit-dev:
     runs-on: ubuntu-latest
@@ -13,7 +12,6 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
         with:
-          token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
       - uses: hashicorp/setup-terraform@v1
         with:
@@ -76,4 +74,10 @@ jobs:
       - name: Terragrunt Validate Status
         if: steps.validate.outcome == 'failure'
         run: exit 1
+      - name: Trigger Plan
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Terraform Config
+          token: ${{ secrets.GH_TOKEN }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
