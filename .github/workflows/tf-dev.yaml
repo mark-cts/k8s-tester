@@ -9,6 +9,9 @@ jobs:
     if: github.event.pusher.name != 'ci'
     name: "Validate and Commit Dev versions"
     steps:
+      - name: debug
+        run: |
+          echo ${{ github.event }}
       - name: checkout
         uses: actions/checkout@v2
         with:
