@@ -17,8 +17,27 @@ env:
   after_live: demo
   after_demo: nil
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+      - name: Get specific changed envs
+        id: changed-files
+        uses: tj-actions/changed-files@v1.1.3
+        with:
+          files: |
+            infra/tf/terraform/**
+      - name: Check changes
+        run: |
+          x="${{ steps.changed-files.outputs.all_changed_and_modified_files }}"
+          echo $x
   matrix:
     runs-on: ubuntu-latest
+    needs: check
+    if: needs.check.result == 'success'
     name: Compile Updated/New files
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
