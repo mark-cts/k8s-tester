@@ -10,8 +10,9 @@ jobs:
     name: "Validate and Commit Dev versions"
     steps:
       - name: debug
-        run: |
-          echo ${{ github.event }}
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: echo "$GITHUB_CONTEXT"
       - name: checkout
         uses: actions/checkout@v2
         with:
