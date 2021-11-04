@@ -4,20 +4,21 @@ on:
   status
 env:
   IMAGE: hello-world
-  REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
+  NONPROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
   PROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images-prod
   PROJECT_ID: markbox-cts
-  after_dev: uat
-  after_uat: live
-  after_live: demo
-  after_demo: nil
+  pre_uat: dev
+  pre_live: uat
+  pre_demo: live
 
 jobs:
-  build-matrix:
-    name: Build Matrix
+  build-env:
+    name: Build Env
     runs-on: ubuntu-latest
     outputs:
-      environment_change: ${{ steps.build.outputs.env_change }}
+      env: ${{ steps.build.outputs.env }}
+      env_prev: ${{ steps.build.outputs.env_prev }}
+      registry: ${{ steps.build.outputs.registry }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -33,13 +34,22 @@ jobs:
         id: check
         run: |
           x="${{ steps.changed-files.outputs.all_changed_and_modified_files }}"
-
-          echo "$x"
+          dir=$(echo "$x" | sed 's/\/kustomization.yaml//g')
+          envname=$(basename $dir)
+          eval env_prev='$'prev_$envname
+          if [[ "$envname" == "live" || "$envname" == "demo" ]]
+          then
+              registry="${{ env.PROD_REGISTRY_HOSTNAME }}"
+          else
+              registry="${{ env.NONPROD_REGISTRY_HOSTNAME }}"
+          fi
+          echo "::set-output name=env::$envname"
+          echo "::set-output name=env_prev::$env_prev"
+          echo "::set-output name=registry::$registry"
 
   update-env:
     name: Update Image
-    needs: build-matrix
-    environment: live
+    needs: build-env
     if: github.event.state == 'success' && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.commit.message, 'uat') && github.event.context == 'kustomization/hello-world-uat' # kustomize/dep-name
     runs-on: ubuntu-latest
     steps:
@@ -47,11 +57,12 @@ jobs:
       - uses: imranismail/setup-kustomize@v1
       - name: set image
         run: |
-          export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.ENVIRONMENT_PREV }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
+          export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ needs.build-env.outputs.env_prev }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
           echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
-          cd infra/k8s/overlays/${{ env.ENVIRONMENT }}/
-          kustomize edit set image ${{ env.IMAGE }}=${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:$IMAGE_TAG
+          cd infra/k8s/overlays/${{ needs.build-env.outputs.env }}/
+          kustomize edit set image ${{ env.IMAGE }}=${{ needs.build-env.outputs.registry }}/${{ env.IMAGE }}:$IMAGE_TAG
           kustomize build .
+          kustomize build . | kubectl apply --dry-run=client -f - 
       # setup gcloud for gcr auth
       - uses: google-github-actions/setup-gcloud@master
         with:
@@ -67,6 +78,7 @@ jobs:
           username: _json_key
           password: ${{ secrets.GCLOUD_SERVICE_KEY }}
       - name: Push Image to prod from nonprod
+        if: needs.build-env.outputs.env == 'live'
         run: |
           docker pull "${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.IMAGE_TAG }}"
           docker tag "${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.IMAGE_TAG }}" "${{ env.PROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.IMAGE_TAG }}"
@@ -74,7 +86,35 @@ jobs:
       - name: commit
         uses: EndBug/add-and-commit@v7
         with:
-          add: infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
+          add: infra/k8s/overlays/${{ env.needs.build-env.outputs.env }}/kustomization.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
-          message: "Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.IMAGE_TAG }}"
+          message: "Set image for ${{ env.IMAGE }} in ${{ env.needs.build-env.outputs.env }} to ${{ env.IMAGE_TAG }}"
+          push: false
+      - name: Create PR
+        id: create-pr
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          base: main # branch to merge into
+          commit-message: Deploy changes to ${{ env.needs.build-env.outputs.env  }}
+          committer: ci <ci@gingerninja.co>
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          signoff: false
+          branch: k8-${{ env.needs.build-env.outputs.env  }}
+          delete-branch: true
+          title: '[CI] Deploy changes to ${{ env.needs.build-env.outputs.env  }} from ${{ env.cur_env }}'
+          body: |
+            *Automated PR*
+
+            This PR is to deploy changes to *${{ env.next_env }}* from *${{ env.cur_env }}*
+
+            Original PR: hahaha not yet, I need to be added
+          labels: |
+            automated
+            infra
+          assignees: Bltt
+          reviewers: mark-cts
+          team-reviewers: |
+            owners
+          draft: false

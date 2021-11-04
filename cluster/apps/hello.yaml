@@ -65,3 +65,21 @@ spec:
       kind: Deployment
       name: hello-world-live
       namespace: hello-world-live
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
+kind: Kustomization
+metadata:
+  name: hello-world-demo
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./infra/k8s/overlays/demo
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: hello-world
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: hello-world-demo
+      namespace: hello-world-demo
