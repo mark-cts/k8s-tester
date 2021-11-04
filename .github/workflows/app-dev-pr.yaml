@@ -1,5 +1,4 @@
-name: dev-pr
-
+name: App Linting
 on:
   pull_request:
     branches:

@@ -1,4 +1,4 @@
-name: live
+name: App Deploy Live
 
 on:
   status
