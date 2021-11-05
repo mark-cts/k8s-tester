@@ -12,7 +12,7 @@ def hello_world():
 
 
 # route test
-@app.route("/test")
+@app.route("/tests")
 def hello_test():
     return "Hello, test!"
 
