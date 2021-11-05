@@ -7,9 +7,9 @@ env:
   NONPROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
   PROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images-prod
   PROJECT_ID: markbox-cts
-  pre_uat: dev
-  pre_live: uat
-  pre_demo: live
+  after_dev: uat
+  after_uat: live
+  after_live: demo
 
 jobs:
   # new job to first check the files are relevant to change or that this should continue
@@ -19,7 +19,7 @@ jobs:
     outputs:
       check: ${{ steps.check.outputs.check }}
       env: ${{ steps.check.outputs.env }}
-      env_prev: ${{ steps.check.outputs.env_prev }}
+      env_next: ${{ steps.check.outputs.env_next }}
       registry: ${{ steps.check.outputs.registry }}
     steps:
       - uses: actions/checkout@v2
@@ -40,19 +40,19 @@ jobs:
           then
               check="false"
               envname="_nil"
-              env_prev="_nil"
+              env_next="_nil"
               registry="_nil"
           else          
               dir=$(echo "$x" | sed 's/\/kustomization.yaml//g')
               envname=$(basename $dir)
-              eval env_prev='$'prev_$envname
+              eval env_next='$'prev_$envname
               if [[ "$envname" == "live" || "$envname" == "demo" ]]
               then
                   registry="${{ env.PROD_REGISTRY_HOSTNAME }}"
               else
                   registry="${{ env.NONPROD_REGISTRY_HOSTNAME }}"
               fi
-              if [ "$envname" == "dev" ]
+              if [ "$envname" == "demo" ]
               then
                   check="false"
               else
@@ -61,11 +61,11 @@ jobs:
           fi
           echo "$check"
           echo "$envname"
-          echo "$env_prev"
+          echo "$env_next"
           echo "$registry"
           echo "::set-output name=check::$check"
           echo "::set-output name=env::$envname"
-          echo "::set-output name=env_prev::$env_prev"
+          echo "::set-output name=env_next::$env_next"
           echo "::set-output name=registry::$registry"
 
   update-env:
@@ -78,9 +78,9 @@ jobs:
       - uses: imranismail/setup-kustomize@v1
       - name: set image
         run: |
-          export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ needs.build-env.outputs.env_prev }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
+          export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ needs.build-env.outputs.env }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
           echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
-          cd infra/k8s/overlays/${{ needs.build-env.outputs.env }}/
+          cd infra/k8s/overlays/${{ needs.build-env.outputs.env_next }}/
           kustomize edit set image ${{ env.IMAGE }}=${{ needs.build-env.outputs.registry }}/${{ env.IMAGE }}:$IMAGE_TAG
           kustomize build .
           kustomize build . | kubectl apply --dry-run=client -f - 
@@ -99,7 +99,7 @@ jobs:
           username: _json_key
           password: ${{ secrets.GCLOUD_SERVICE_KEY }}
       - name: Push Image to prod from nonprod
-        if: needs.build-env.outputs.env == 'live'
+        if: needs.build-env.outputs.env_next == 'live'
         run: |
           docker pull "${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.IMAGE_TAG }}"
           docker tag "${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.IMAGE_TAG }}" "${{ env.PROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.IMAGE_TAG }}"
@@ -107,10 +107,10 @@ jobs:
       - name: commit
         uses: EndBug/add-and-commit@v7
         with:
-          add: infra/k8s/overlays/${{ env.needs.build-env.outputs.env }}/kustomization.yaml
+          add: infra/k8s/overlays/${{ env.needs.build-env.outputs.env_next }}/kustomization.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
-          message: "Set image for ${{ env.IMAGE }} in ${{ env.needs.build-env.outputs.env }} to ${{ env.IMAGE_TAG }}"
+          message: "Set image for ${{ env.IMAGE }} in ${{ env.needs.build-env.outputs.env_next }} to ${{ env.IMAGE_TAG }}"
           push: false
       - name: Create PR
         id: create-pr
@@ -118,17 +118,17 @@ jobs:
         with:
           token: ${{ secrets.GH_TOKEN }}
           base: main # branch to merge into
-          commit-message: Deploy changes to ${{ env.needs.build-env.outputs.env  }}
+          commit-message: Deploy changes to ${{ env.needs.build-env.outputs.env_next }}
           committer: ci <ci@gingerninja.co>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           signoff: false
-          branch: k8-${{ env.needs.build-env.outputs.env  }}
+          branch: k8-${{ env.needs.build-env.outputs.env_next  }}
           delete-branch: true
-          title: '[CI] Deploy changes to ${{ env.needs.build-env.outputs.env  }} from ${{ env.cur_env }}'
+          title: '[CI] Deploy changes to ${{ env.needs.build-env.outputs.env_next  }} from ${{ env.needs.build-env.outputs.env }}'
           body: |
             *Automated PR*
 
-            This PR is to deploy changes to *${{ env.next_env }}* from *${{ env.cur_env }}*
+            This PR is to deploy changes to *${{ env.needs.build-env.outputs.env_next }}* from *${{ env.needs.build-env.outputs.env }}*
 
             Original PR: hahaha not yet, I need to be added
           labels: |
