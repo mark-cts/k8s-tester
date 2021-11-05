@@ -12,6 +12,7 @@ env:
   pre_demo: live
 
 jobs:
+  # new job to first check the files are relevant to change or that this should continue
   build-env:
     name: Build Env
     runs-on: ubuntu-latest
@@ -34,14 +35,21 @@ jobs:
         id: check
         run: |
           x="${{ steps.changed-files.outputs.all_changed_and_modified_files }}"
-          dir=$(echo "$x" | sed 's/\/kustomization.yaml//g')
-          envname=$(basename $dir)
-          eval env_prev='$'prev_$envname
-          if [[ "$envname" == "live" || "$envname" == "demo" ]]
+          if [ -z "$x" ]
           then
-              registry="${{ env.PROD_REGISTRY_HOSTNAME }}"
-          else
-              registry="${{ env.NONPROD_REGISTRY_HOSTNAME }}"
+              envname="_nil"
+              env_prev="_nil"
+              registry="_nil"
+          else          
+              dir=$(echo "$x" | sed 's/\/kustomization.yaml//g')
+              envname=$(basename $dir)
+              eval env_prev='$'prev_$envname
+              if [[ "$envname" == "live" || "$envname" == "demo" ]]
+              then
+                  registry="${{ env.PROD_REGISTRY_HOSTNAME }}"
+              else
+                  registry="${{ env.NONPROD_REGISTRY_HOSTNAME }}"
+              fi
           fi
           echo "::set-output name=env::$envname"
           echo "::set-output name=env_prev::$env_prev"
@@ -50,7 +58,7 @@ jobs:
   update-env:
     name: Update Image
     needs: build-env
-    if: github.event.state == 'success' && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.commit.message, 'uat') && github.event.context == 'kustomization/hello-world-uat' # kustomize/dep-name
+    if: needs.build-env.outputs.env != '_nil' github.event.state == 'success' && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.commit.message, 'uat') && github.event.context == 'kustomization/hello-world-uat' # kustomize/dep-name
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
