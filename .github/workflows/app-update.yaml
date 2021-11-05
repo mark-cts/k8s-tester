@@ -17,6 +17,7 @@ jobs:
     name: Build Env
     runs-on: ubuntu-latest
     outputs:
+      check: ${{ steps.check.outputs.check }}
       env: ${{ steps.check.outputs.env }}
       env_prev: ${{ steps.check.outputs.env_prev }}
       registry: ${{ steps.check.outputs.registry }}
@@ -37,6 +38,7 @@ jobs:
           x="${{ steps.changed-files.outputs.all_changed_and_modified_files }}"
           if [ -z "$x" ]
           then
+              check="false"
               envname="_nil"
               env_prev="_nil"
               registry="_nil"
@@ -50,7 +52,9 @@ jobs:
               else
                   registry="${{ env.NONPROD_REGISTRY_HOSTNAME }}"
               fi
+              check="true"
           fi
+          echo "::set-output name=check::$check"
           echo "::set-output name=env::$envname"
           echo "::set-output name=env_prev::$env_prev"
           echo "::set-output name=registry::$registry"
@@ -58,7 +62,7 @@ jobs:
   update-env:
     name: Update Image
     needs: build-env
-    if: needs.build-env.outputs.env != '_nil' && github.event.state == 'success' && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.commit.message, needs.build-env.outputs.env) && github.event.context, 'kustomization/hello-world-${{ needs.build-env.outputs.env }}' # kustomize/dep-name
+    if: needs.check.outputs.check == 'true' && github.event.state == 'success' && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.commit.message, needs.build-env.outputs.env) && github.event.context, 'kustomization/hello-world-${{ needs.build-env.outputs.env }}' # kustomize/dep-name
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
