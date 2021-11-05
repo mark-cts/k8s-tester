@@ -71,7 +71,7 @@ jobs:
   update-env:
     name: Update Image
     needs: build-env
-    if: needs.check.outputs.check == true && github.event.state == 'success' && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.commit.message, needs.build-env.outputs.env) && github.event.context, 'kustomization/hello-world-${{ needs.build-env.outputs.env }}' # kustomize/dep-name
+    if: needs.check.outputs.check == true && needs.check.outputs.env != '_nil' && github.event.state == 'success' && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.commit.message, needs.build-env.outputs.env) && github.event.context, 'kustomization/hello-world-${{ needs.build-env.outputs.env }}' # kustomize/dep-name
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
