@@ -11,6 +11,12 @@ def hello_world():
     return "Hello, Docker!"
 
 
+@app.route("/notif", methods=["POST"])
+def hello_world():
+    resp = request.get_json()
+    return resp
+
+
 # route test
 @app.route("/test")
 def hello_test():
