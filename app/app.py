@@ -1,6 +1,6 @@
 import time
 
-from flask import Flask
+from flask import Flask, request
 
 app = Flask(__name__)
 
@@ -11,8 +11,9 @@ def hello_world():
     return "Hello, Docker!"
 
 
+# notification route
 @app.route("/notif", methods=["POST"])
-def hello_world():
+def hello_notif():
     resp = request.get_json()
     return resp
 
