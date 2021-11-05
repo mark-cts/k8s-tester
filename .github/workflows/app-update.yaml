@@ -52,7 +52,12 @@ jobs:
               else
                   registry="${{ env.NONPROD_REGISTRY_HOSTNAME }}"
               fi
-              check="true"
+              if [ "$envname" == "dev" ]
+              then
+                  check="false"
+              else
+                  check="true"
+              fi
           fi
           echo "$check"
           echo "$envname"
