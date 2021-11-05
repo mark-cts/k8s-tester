@@ -54,6 +54,10 @@ jobs:
               fi
               check="true"
           fi
+          echo "$check"
+          echo "$envname"
+          echo "$env_prev"
+          echo "$registry"
           echo "::set-output name=check::$check"
           echo "::set-output name=env::$envname"
           echo "::set-output name=env_prev::$env_prev"
