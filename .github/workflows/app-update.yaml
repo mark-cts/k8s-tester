@@ -67,6 +67,9 @@ jobs:
           echo "::set-output name=env::$envname"
           echo "::set-output name=env_next::$env_next"
           echo "::set-output name=registry::$registry"
+      - name: check result
+        if: steps.check.outputs.envname == "noenv"
+        uses: andymckay/cancel-action@0.2
 
   update-env:
     name: Update Image
