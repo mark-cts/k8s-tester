@@ -38,8 +38,8 @@ jobs:
           x="${{ steps.changed-files.outputs.all_changed_and_modified_files }}"
           if [ -z "$x" ]
           then
-              check="false"
-              envname="_nil"
+              check=false
+              envname="noenv"
               env_next="_nil"
               registry="_nil"
           else          
@@ -54,7 +54,7 @@ jobs:
               fi
               if [ "$envname" == "demo" ]
               then
-                  check="false"
+                  check=false
               else
                   check="true"
               fi
@@ -71,7 +71,7 @@ jobs:
   update-env:
     name: Update Image
     needs: build-env
-    if: needs.check.outputs.check == true && needs.check.outputs.env != '_nil' && github.event.state == 'success' && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.commit.message, needs.build-env.outputs.env) && github.event.context, 'kustomization/hello-world-${{ needs.build-env.outputs.env }}' # kustomize/dep-name
+    if: needs.check.outputs.check == true && needs.check.outputs.env != 'noenv' && github.event.state == 'success' && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.commit.message, needs.build-env.outputs.env) && github.event.context, 'kustomization/hello-world-${{ needs.build-env.outputs.env }}' # kustomize/dep-name
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
