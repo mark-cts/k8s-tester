@@ -81,7 +81,7 @@ metadata:
   namespace: flux-system
 spec:
   type: generic
-  address: http://hello-world-dev.hello-world-dev.svc.cluster.local
+  address: http://hello-world-dev.hello-world-dev.svc.cluster.local/notif
 ---
 apiVersion: notification.toolkit.fluxcd.io/v1beta1
 kind: Alert
