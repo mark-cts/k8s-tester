@@ -17,9 +17,9 @@ jobs:
     name: Build Env
     runs-on: ubuntu-latest
     outputs:
-      env: ${{ steps.build.outputs.env }}
-      env_prev: ${{ steps.build.outputs.env_prev }}
-      registry: ${{ steps.build.outputs.registry }}
+      env: ${{ steps.check.outputs.env }}
+      env_prev: ${{ steps.check.outputs.env_prev }}
+      registry: ${{ steps.check.outputs.registry }}
     steps:
       - uses: actions/checkout@v2
         with:
