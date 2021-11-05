@@ -22,8 +22,8 @@ jobs:
       registry: ${{ steps.build.outputs.registry }}
     steps:
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+      - name: debug
+        run: echo "${{ toJson(github.event) }}"
       - name: Get specific changed envs
         id: changed-files
         uses: tj-actions/changed-files@v1.1.3
