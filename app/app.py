@@ -1,4 +1,5 @@
 import time
+import sys
 
 from flask import Flask, request
 
@@ -15,7 +16,7 @@ def hello_world():
 @app.route("/notif", methods=["POST"])
 def hello_notif():
     resp = request.get_json()
-    print(resp)
+    print(resp, file=sys.stderr)
     return resp
 
 
