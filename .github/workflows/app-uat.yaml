@@ -1,5 +1,10 @@
 name: App Deploy UAT
-on: workflow_dispatch
+on:
+  workflow_run:
+    workflows: ["App Build/Deploy Dev"]
+    branches: [main]
+    types:
+      - completed
 env:
   IMAGE: hello-world
   NONPROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
