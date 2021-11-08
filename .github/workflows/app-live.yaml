@@ -48,7 +48,7 @@ jobs:
           add: infra/k8s/overlays/${{ env.next_env }}/kustomization.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
-          message: "Set image for ${{ env.IMAGE }} in ${{ env.env.next_env }} to ${{ env.IMAGE_TAG }}"
+          message: "Set image for ${{ env.IMAGE }} in ${{ env.next_env }} to ${{ env.IMAGE_TAG }}"
           push: false
       - name: Create PR
         id: create-pr
