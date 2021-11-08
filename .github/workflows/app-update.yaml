@@ -90,7 +90,6 @@ jobs:
           cd infra/k8s/overlays/${{ needs.build-env.outputs.env_next }}/
           kustomize edit set image ${{ env.IMAGE }}=${{ needs.build-env.outputs.registry }}/${{ env.IMAGE }}:$IMAGE_TAG
           kustomize build .
-          kustomize build . | kubectl apply --dry-run=client -f - 
       # setup gcloud for gcr auth
       - uses: google-github-actions/setup-gcloud@master
         with:
