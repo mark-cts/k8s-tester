@@ -36,7 +36,7 @@ metadata:
   name: hello-world-uat
   namespace: flux-system
 spec:
-  interval: 5m0s
+  interval: 1m0s
   path: ./infra/k8s/overlays/uat
   prune: true
   sourceRef:
@@ -54,7 +54,7 @@ metadata:
   name: hello-world-live
   namespace: flux-system
 spec:
-  interval: 10m0s
+  interval: 1m0s
   path: ./infra/k8s/overlays/live
   prune: true
   sourceRef:
@@ -72,7 +72,7 @@ metadata:
   name: hello-world-demo
   namespace: flux-system
 spec:
-  interval: 10m0s
+  interval: 1m0s
   path: ./infra/k8s/overlays/demo
   prune: true
   sourceRef:
