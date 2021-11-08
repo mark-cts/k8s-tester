@@ -96,6 +96,7 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
           service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
           export_default_credentials: true
+          credentials_file_path: /tmp/key.json
       - run: |
           gcloud auth configure-docker europe-west1-docker.pkg.dev
       - name: login
@@ -124,17 +125,17 @@ jobs:
         with:
           token: ${{ secrets.GH_TOKEN }}
           base: main # branch to merge into
-          commit-message: Deploy changes to ${{ env.needs.build-env.outputs.env_next }}
+          commit-message: Deploy changes to ${{ needs.build-env.outputs.env_next }}
           committer: ci <ci@gingerninja.co>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           signoff: false
-          branch: k8-${{ env.needs.build-env.outputs.env_next  }}
+          branch: k8-${{ needs.build-env.outputs.env_next  }}
           delete-branch: true
-          title: '[CI] Deploy changes to ${{ env.needs.build-env.outputs.env_next  }} from ${{ env.needs.build-env.outputs.env }}'
+          title: '[CI] Deploy changes to ${{ needs.build-env.outputs.env_next }} from ${{ needs.build-env.outputs.env }}'
           body: |
             *Automated PR*
 
-            This PR is to deploy changes to *${{ env.needs.build-env.outputs.env_next }}* from *${{ env.needs.build-env.outputs.env }}*
+            This PR is to deploy changes to *${{ needs.build-env.outputs.env_next }}* from *${{ needs.build-env.outputs.env }}*
 
             Original PR: hahaha not yet, I need to be added
           labels: |

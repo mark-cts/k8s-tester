@@ -19,3 +19,4 @@ jobs:
           FILTER_REGEX_INCLUDE: .*infra/k8s/.*
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+# todo: add lint step for justomize build, dry runs etc. need to work out env to get correct paths etc

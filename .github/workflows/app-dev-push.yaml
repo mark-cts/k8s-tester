@@ -32,6 +32,7 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
           service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
           export_default_credentials: true
+          credentials_file_path: /tmp/key.json
       - run: |
           gcloud auth configure-docker europe-west1-docker.pkg.dev
       - name: Build
