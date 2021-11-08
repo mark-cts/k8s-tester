@@ -20,7 +20,7 @@ jobs:
           export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.env }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
           echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
           cd infra/k8s/overlays/${{ env.next_env }}/
-          kustomize edit set image ${{ env.IMAGE }}=${{ needs.build-env.outputs.registry }}/${{ env.IMAGE }}:$IMAGE_TAG
+          kustomize edit set image ${{ env.IMAGE }}=${{ env.PROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:$IMAGE_TAG
           kustomize build .
       # setup gcloud for gcr auth
       - uses: google-github-actions/setup-gcloud@master
@@ -34,7 +34,7 @@ jobs:
       - name: login
         uses: docker/login-action@v1
         with:
-          registry: europe-west1-docker.pkg.dev
+          registry: ${{ env.PROD_REGISTRY_HOSTNAME }}
           username: _json_key
           password: ${{ secrets.GCLOUD_SERVICE_KEY }}
       - name: Push Image to prod from nonprod

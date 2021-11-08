@@ -20,7 +20,7 @@ jobs:
           export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.env }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
           echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
           cd infra/k8s/overlays/${{ env.next_env }}/
-          kustomize edit set image ${{ env.IMAGE }}=${{ needs.build-env.outputs.registry }}/${{ env.IMAGE }}:$IMAGE_TAG
+          kustomize edit set image ${{ env.IMAGE }}=${{ env.NONPROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:$IMAGE_TAG
           kustomize build .
       # setup gcloud for gcr auth
       - uses: google-github-actions/setup-gcloud@master
@@ -29,14 +29,6 @@ jobs:
           service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
           export_default_credentials: true
           credentials_file_path: /tmp/key.json
-      - run: |
-          gcloud auth configure-docker europe-west1-docker.pkg.dev
-      - name: login
-        uses: docker/login-action@v1
-        with:
-          registry: europe-west1-docker.pkg.dev
-          username: _json_key
-          password: ${{ secrets.GCLOUD_SERVICE_KEY }}
       - name: commit
         uses: EndBug/add-and-commit@v7
         with:
