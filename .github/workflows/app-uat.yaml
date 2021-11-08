@@ -1,11 +1,5 @@
 name: App Deploy UAT
-
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - infra/k8s/overlays/**
+on: status
 env:
   IMAGE: hello-world
   NONPROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
@@ -13,7 +7,6 @@ env:
   PROJECT_ID: markbox-cts
   env: dev
   next_env: uat
-
 jobs:
   update-env:
     name: Update Image
