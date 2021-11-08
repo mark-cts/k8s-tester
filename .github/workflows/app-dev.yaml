@@ -76,7 +76,6 @@ jobs:
   deploy:
     needs: commit
     name: deploy
-    environment: dev
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -84,7 +83,6 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
       - uses: azure/setup-kubectl@v1
       - uses: imranismail/setup-kustomize@v1
-      - name: wait for ready
       - uses: google-github-actions/setup-gcloud@master
         with:
           project_id: ${{ env.PROJECT_ID }}
