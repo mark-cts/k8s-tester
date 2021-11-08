@@ -79,20 +79,20 @@ jobs:
     environment: dev
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-      with:
-        token: ${{ secrets.GH_TOKEN }}
-    - uses: azure/setup-kubectl@v1
-    - uses: imranismail/setup-kustomize@v1
-    - name: wait for ready
-    - uses: google-github-actions/setup-gcloud@master
-      with:
-        project_id: ${{ env.PROJECT_ID }}
-        service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
-        export_default_credentials: true
-        credentials_file_path: /tmp/key.json
-    - name: check
-      run: |
-        gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
-        kubectl wait -n hello-world-dev deployment/hello-world-dev --timeout=4m --for=condition=available
-      # we can add rollback here in future for failures
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+      - uses: azure/setup-kubectl@v1
+      - uses: imranismail/setup-kustomize@v1
+      - name: wait for ready
+      - uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
+          export_default_credentials: true
+          credentials_file_path: /tmp/key.json
+      - name: check
+        run: |
+          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
+          kubectl wait -n hello-world-dev deployment/hello-world-dev --timeout=4m --for=condition=available
+        # we can add rollback here in future for failures
