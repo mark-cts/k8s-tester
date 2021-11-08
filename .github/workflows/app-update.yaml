@@ -119,6 +119,28 @@ jobs:
           author_email: "ci@gingerninja.co"
           message: "Set image for ${{ env.IMAGE }} in ${{ env.needs.build-env.outputs.env_next }} to ${{ env.IMAGE_TAG }}"
           push: false
+      - name: get original commit # todo: check this always works
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
+        run: |
+          export COMM=$(git rev-list main -1 app/)
+          echo "orig_commit=$COMM" >> $GITHUB_ENV
+      - name: get original PR
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
+        uses: actions/github-script@v5
+        id: origpr
+        with:
+          github-token: ${{ secrets.GH_TOKEN }}
+          script: |
+            const origcommit = `${{ env.orig_commit }}`
+
+            const result = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: origcommit
+            })
+            const numb = result.data[0].number
+            console.log(numb)
+            return numb
       - name: Create PR
         id: create-pr
         uses: peter-evans/create-pull-request@v3
@@ -131,13 +153,14 @@ jobs:
           signoff: false
           branch: k8-${{ needs.build-env.outputs.env_next  }}
           delete-branch: true
-          title: '[CI] Deploy changes to ${{ needs.build-env.outputs.env_next }} from ${{ needs.build-env.outputs.env }}'
+          title: '[CI] Deploy ${{ env.IMAGE_TAG }} to ${{ needs.build-env.outputs.env_next }}'
           body: |
             *Automated PR*
 
             This PR is to deploy changes to *${{ needs.build-env.outputs.env_next }}* from *${{ needs.build-env.outputs.env }}*
+            Artifact moved: ${{ env.IMAGE_TAG }}
 
-            Original PR: hahaha not yet, I need to be added
+            Original PR: #${{ steps.origpr.outputs.result }}
           labels: |
             automated
             infra
