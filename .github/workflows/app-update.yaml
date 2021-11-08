@@ -49,7 +49,7 @@ jobs:
           else          
               dir=$(echo "$x" | sed 's/\/kustomization.yaml//g')
               envname=$(basename $dir)
-              eval env_next='$'prev_$envname
+              eval env_next='$'after_$envname
               if [[ "$envname" == "live" || "$envname" == "demo" ]]
               then
                   registry="${{ env.PROD_REGISTRY_HOSTNAME }}"
