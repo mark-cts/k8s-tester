@@ -14,6 +14,8 @@ env:
   REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
   PROJECT_ID: markbox-cts
   ENVIRONMENT: dev
+  CLUSTER_NAME: tester
+  CLUSTER_REGION: europe-west1
 
 jobs:
   build:
@@ -91,6 +93,6 @@ jobs:
         credentials_file_path: /tmp/key.json
     - name: check
       run: |
-        gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.CLUSTER_PROJECT }}
+        gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
         kubectl wait -n hello-world-dev deployment/hello-world-dev --timeout=4m --for=condition=available
       # we can add rollback here in future for failures
