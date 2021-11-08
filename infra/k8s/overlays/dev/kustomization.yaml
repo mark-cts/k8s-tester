@@ -9,7 +9,7 @@ resources:
 images:
 - name: hello-world
   newName: europe-west1-docker.pkg.dev/markbox-cts/images/hello-world
-  newTag: 0f1259c351e590b874b3a72b45f026e7afbb997a
+  newTag: 7b976082fb59c50432f2496ec2ee3bcccfa1ecf8
 - name: hello-world-2
   newName: europe-west1-docker.pkg.dev/markbox-cts/images/hello-world
   newTag: wrongs
