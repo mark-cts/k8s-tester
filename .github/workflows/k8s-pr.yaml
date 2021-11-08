@@ -1,0 +1,21 @@
+name: K8S Linting
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - infra/k8s/**
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Lint Code Base
+        uses: github/super-linter@v4
+        env:
+          VALIDATE_ALL_CODEBASE: false
+          FILTER_REGEX_INCLUDE: .*infra/k8s/.*
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
