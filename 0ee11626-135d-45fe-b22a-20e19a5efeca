@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "markbox-cts",
+  "private_key_id": "d23dff8996a4d0e52c21ba6742e02cb0ff232f19",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCzM5Z70ZALatAF\nBJ/v4AVkX4aGgzT67OAPkDXHPoWqFAq2FBblbUsgLByiQmGPfyTT6VZobwdIduch\nIx5LQ+T9vQmWAHwsEJBlqH0mbsAbVuKmLi5wWi3V9cd8NrkPUNPIQLIgOi/7Tlhd\n4/xOxcBsTosNAXz+0FPmhHw4pdSW13ICEOYOezwaZ53jdGzeWzCZDEnElGxYwdYu\n0oPTCEndGxA0MJnPOm0wTPAz54fyX0wEuntEBbMjQw5fDJBNvgyfub7wJ8JTsBAK\nALbu4ucLCZaryLTmDO0SWyVSrqjKS6W8cXm9z3BKMf1h2u78+rH+5fEXsTwIIGBx\nCaqsN5DdAgMBAAECggEAJA+JhLkTB3kjCx93H8owy5X9eCwHCUeJfxhB+io2s5b8\n4M8CHID10S+PQ4egIkQvoQUfgjx1druWnzB19CdheT4FI85NLoDWzd4t8QHwXpAJ\nY+9/INTEzH18+x3394EIXQ/HyHxtE2Ecnyg1qZRZuHHFwYQ/Jve9KnIWnT+hnAi/\nbfqEMzium/c4qbwjauISbU5Sr2vvsJvBiX93UfeP2C0/awb43UqLd1mEgmyg239t\ncb3EPsGwrzzTf5AnvzJATtsx53je6aQX22/3Vse6zmNqmzNx0sS3S5Hff8ONikxF\nkEn5JX8Hcvm4osaTGjte44Mlx2gFe4t/v5I8RVL3AQKBgQD74eYCXE95zLZF/t+e\nzRT4NrSuHvr0614xQq43I/P3Z4dSg9QA23no0B8rlGB5+oZC62EVCKHSQXlKFtRr\n+8dPR/FnKH4OyZ+rD7e04J4egpjTQwRALXn9vOpjhlvykiFzPT4NpXf+BD4wS6En\n+ciUAjLBj6DJDNOEb6rB3hDATQKBgQC2IYcDa2sBVvmKz3Im/dVzy7GZq/5EypNa\n5q/kTKVAru/Cf2XqyUp63ba9K5RYlXbfTXcZbfpeL2e5U4/5KVDlis5OkN5Mm/Em\nysTgsTBU4F7ipmD4mWNz8rqxxW5UHbra5qKBnQkpF2tiUD4qsdofQEpWibzOiPxa\nlkIHLG3a0QKBgQCdbooWu5+pHzxl73HRjZknsvmnQxHT9zC+VVESgdRAtGKuPltJ\n1eQSkdKJqInMc7trJDdfsC+EfQvUNQS8IXhnoy3NLk/r6jVz87T8xs/Nfg8LLH4B\npurynxtY7WeW66Mgpgyc9ulSyVAdW4f0tniZme4jcSQrxWqHAkyWM7gAmQKBgGnN\n4FkkNe15UU5KZM4x96ZlVq8nM3dTF3dfPB8sR3PkLHSY/eP/O71Uv6v1fSBY882V\nevLS6Pd+IouO97yPO+edU2xgzENE9DrM4MKHLMSh831Hml3Q/e2FvN85CnbjLoGs\nKguR5phwenmKlBLJbyVoe8b6DS0Od0tIruLr9IWBAoGBAKNPT0CYoK2GcIkTb+rr\nDG86cuSqjTItX2pSYu8okDQVMaKxEAU6S5j+2gYke2G2WPajODyOyMJEAUdi37wu\n7cdLSaz9Zqgo5VzxAkGGq/NOVfGfxdbY70q1bVZAebna3mjq1MiVpq1j3B11Ks4b\nYzCh9J3TAz8pvqot1WLW97dl\n-----END PRIVATE KEY-----\n",
+  "client_email": "k8s-tester-github@markbox-cts.iam.gserviceaccount.com",
+  "client_id": "106414949583109013434",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/k8s-tester-github%40markbox-cts.iam.gserviceaccount.com"
+}
