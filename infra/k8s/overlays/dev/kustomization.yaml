@@ -12,7 +12,7 @@ images:
   newTag: c6f0f44ba348b1d29599e0505b7e88a7ed7b6023
 - name: hello-world-2
   newName: europe-west1-docker.pkg.dev/markbox-cts/images/hello-world
-  newTag: wrong
+  newTag: wrongs
 
 commonLabels:
   env: dev
