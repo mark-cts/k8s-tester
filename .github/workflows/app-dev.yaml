@@ -85,6 +85,6 @@ jobs:
     - name: wait for ready
       uses: steebchen/kubectl@v2.0.0
       with:
-        config: ${{ secrets.KUBE_CONF }}
+        config: ${{ secrets.KUBE_CONFIG }}
         command: wait -n hello-world-dev deployment/hello-world-dev --for=condition=ready --timeout=5m
       # we can add rollback here in future for failures
