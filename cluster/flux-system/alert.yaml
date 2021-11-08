@@ -72,6 +72,31 @@ spec:
     - kind: Kustomization
       name: hello-world-live
       namespace: flux-system
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta1
+kind: Provider
+metadata:
+  name: hello-world-demo
+  namespace: flux-system
+spec:
+  type: github
+  address: https://github.com/mark-cts/k8s-tester
+  secretRef:
+    name: github
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta1
+kind: Alert
+metadata:
+  name: hello-world-demo
+  namespace: flux-system
+spec:
+  providerRef:
+    name: hello-world-demo
+  eventSeverity: info
+  eventSources:
+    - kind: Kustomization
+      name: hello-world-demo
+      namespace: flux-system
 # notif work
 ---
 apiVersion: notification.toolkit.fluxcd.io/v1beta1
