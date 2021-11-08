@@ -8,8 +8,8 @@ resources:
 
 images:
 - name: hello-world
-  newName: europe-west1-docker.pkg.dev/markbox-cts/images/hello-world
-  newTag: b9956d023a6fe30375f20c9b362bc886fece2113
+  newName: /hello-world
+  newTag: 4781b994423a50bf89d5510bb085630fa9862195
 - name: hello-world-2
   newName: europe-west1-docker.pkg.dev/markbox-cts/images/hello-world
   newTag: 54607f42a4598d389b9e890b1b62e894d16fefa6
