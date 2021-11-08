@@ -1,5 +1,5 @@
 name: App Deploy UAT
-on: status
+on: workflow_dispatch
 env:
   IMAGE: hello-world
   NONPROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
@@ -10,7 +10,6 @@ env:
 jobs:
   update-env:
     name: Update Image
-    if: github.event.state == 'success' && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.commit.message, 'dev') && github.event.context == 'kustomization/hello-world-dev' # kustomize/dep-name
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

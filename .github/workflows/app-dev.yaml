@@ -70,3 +70,21 @@ jobs:
           author_name: "ci"
           author_email: "ci@gingerninja.co"
           message: "Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.GITHUB_SHA }}"
+  
+  deploy:
+    needs: commit
+    name: deploy
+    environment: dev
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.GH_TOKEN }}
+    - uses: azure/setup-kubectl@v1
+    - uses: imranismail/setup-kustomize@v1
+    - name: wait for ready
+      uses: steebchen/kubectl@v2.0.0
+      with:
+        config: ${{ secrets.KUBE_CONF }}
+        command: wait -n hello-world-dev deployment/hello-world-dev --for=condition=ready --timeout=5m
+      # we can add rollback here in future for failures
