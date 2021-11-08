@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - infra/k8s/overlays/*/kustomization.yaml
+      - infra/k8s/overlays/**
 env:
   IMAGE: hello-world
   NONPROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
