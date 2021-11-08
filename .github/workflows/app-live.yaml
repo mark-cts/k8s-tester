@@ -11,7 +11,7 @@ jobs:
   update-env:
     name: Update Image
     needs: build-env
-    if: github.event.state == 'success' && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.commit.message, 'uat') && github.event.context, 'kustomization/hello-world-uat' # kustomize/dep-name
+    if: github.event.state == 'success' && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.commit.message, 'uat') && github.event.context == 'kustomization/hello-world-uat' # kustomize/dep-name
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
