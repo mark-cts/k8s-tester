@@ -21,11 +21,11 @@ spec:
           httpGet:
             path: /healthz/live
             port: 8080
-          initialDelaySeconds: 5
+          initialDelaySeconds: 15
           timeoutSeconds: 1
         readinessProbe:
           httpGet:
             path: /healthz/ready
             port: 8080
-          initialDelaySeconds: 30
+          initialDelaySeconds: 15
           timeoutSeconds: 3
