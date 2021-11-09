@@ -55,8 +55,6 @@ jobs:
     name: Commit
     environment: dev
     runs-on: ubuntu-latest
-    outputs: 
-      commit_sha: ${{ steps.var.outputs.commit_sha }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -74,10 +72,6 @@ jobs:
           author_name: "ci"
           author_email: "ci@gingerninja.co"
           message: "Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.GITHUB_SHA }}"
-      - name: var
-        run: |
-          val="${{ steps.push.outputs.commit_sha }}"
-          echo "::set-output name=commit_sha::$val"
   
   deploy:
     needs: commit
@@ -99,7 +93,7 @@ jobs:
         run: |
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
           newsha="fake"
-          commitshort=${{ needs.commit.outputs.commit_sha }}
+          commitshort=$(git rev-parse main)
           echo "$commitshort"
           sha="$(git rev-parse ${commitshort})"
           echo "Waiting for ${sha} to be deployed."
