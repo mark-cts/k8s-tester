@@ -96,6 +96,7 @@ jobs:
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
           newsha="fake"
           commitshort=${{ needs.commit.outputs.commit_sha }}
+          echo "$commitshort"
           sha="$(git rev-parse ${commitshort})"
           echo "Waiting for ${sha} to be deployed."
           until [ "$newsha" == "$sha" ]
