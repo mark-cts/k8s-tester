@@ -44,7 +44,7 @@ jobs:
           message: "Set image for ${{ env.IMAGE }} in ${{ env.next_env }} to ${{ env.IMAGE_TAG }}"
   
   deploy:
-    needs: commit
+    needs: update-env
     name: deploy
     runs-on: ubuntu-latest
     steps:
