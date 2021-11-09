@@ -12,6 +12,8 @@ env:
   PROJECT_ID: markbox-cts
   env: dev
   next_env: uat
+  CLUSTER_NAME: tester
+  CLUSTER_REGION: europe-west1
 jobs:
   update-env:
     name: Update Image
@@ -40,3 +42,25 @@ jobs:
           author_name: "ci"
           author_email: "ci@gingerninja.co"
           message: "Set image for ${{ env.IMAGE }} in ${{ env.next_env }} to ${{ env.IMAGE_TAG }}"
+  
+  deploy:
+    needs: commit
+    name: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+      - uses: azure/setup-kubectl@v1
+      - uses: imranismail/setup-kustomize@v1
+      - uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
+          export_default_credentials: true
+          credentials_file_path: /tmp/key.json
+      - name: check
+        run: |
+          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
+          kubectl wait -n hello-world-uat deployment/hello-world-uat --timeout=4m --for=condition=available
+        # we can add rollback here in future for failures
