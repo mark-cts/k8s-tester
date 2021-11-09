@@ -56,7 +56,7 @@ jobs:
     environment: dev
     runs-on: ubuntu-latest
     outputs: 
-      sha: ${{ steps.commit.outputs.commit_sha }}
+      commit_sha: ${{ steps.commit.outputs.commit_sha }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -95,7 +95,8 @@ jobs:
         run: |
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
           newsha="fake"
-          sha="$(git rev-parse ${{ needs.commit.outputs.sha }})"
+          commitshort=${{ needs.commit.outputs.commit_sha }}
+          sha="$(git rev-parse ${commitshort})"
           echo "Waiting for ${sha} to be deployed."
           until [ "$newsha" == "$sha" ]
           do
