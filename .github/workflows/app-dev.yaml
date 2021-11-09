@@ -56,7 +56,7 @@ jobs:
     environment: dev
     runs-on: ubuntu-latest
     outputs: 
-      commit_sha: ${{ steps.commit.outputs.commit_sha }}
+      commit_sha: ${{ steps.var.outputs.commit_sha }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -67,13 +67,17 @@ jobs:
           cd infra/k8s/overlays/${{ env.ENVIRONMENT }}/
           kustomize edit set image ${{ env.IMAGE }}=${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.GITHUB_SHA }}
           kustomize build .
-      - name: commit
+      - name: push
         uses: EndBug/add-and-commit@v7
         with:
           add: infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
           message: "Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.GITHUB_SHA }}"
+      - name: var
+        run: |
+          val="${{ steps.push.outputs.commit_sha }}"
+          echo "::set-output name=commit_sha::$val"
   
   deploy:
     needs: commit
