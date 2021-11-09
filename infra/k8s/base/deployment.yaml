@@ -27,5 +27,5 @@ spec:
           httpGet:
             path: /healthz/ready
             port: 8080
-          initialDelaySeconds: 5
+          initialDelaySeconds: 30
           timeoutSeconds: 3

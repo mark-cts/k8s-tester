@@ -34,5 +34,5 @@ def liveness():
 
 @app.route("/healthz/ready")
 def readiness():
-    time.sleep(1)
+    time.sleep(30)
     return "OK"
