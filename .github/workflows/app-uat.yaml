@@ -10,8 +10,9 @@ env:
   NONPROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
   PROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images-prod
   PROJECT_ID: markbox-cts
-  env: dev
-  next_env: uat
+  ENV: dev
+  APP_NAME: hello-world
+  NEXT_ENV: uat
   CLUSTER_NAME: tester
   CLUSTER_REGION: europe-west1
 jobs:
@@ -23,9 +24,9 @@ jobs:
       - uses: imranismail/setup-kustomize@v1
       - name: set image
         run: |
-          export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.env }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
+          export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.ENV }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
           echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
-          cd infra/k8s/overlays/${{ env.next_env }}/
+          cd infra/k8s/overlays/${{ env.NEXT_ENV }}/
           kustomize edit set image ${{ env.IMAGE }}=${{ env.NONPROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:$IMAGE_TAG
           kustomize build .
       # setup gcloud for gcr auth
@@ -38,10 +39,10 @@ jobs:
       - name: commit
         uses: EndBug/add-and-commit@v7
         with:
-          add: infra/k8s/overlays/${{ env.next_env }}/kustomization.yaml
+          add: infra/k8s/overlays/${{ env.NEXT_ENV }}/kustomization.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
-          message: "Set image for ${{ env.IMAGE }} in ${{ env.next_env }} to ${{ env.IMAGE_TAG }}"
+          message: "Set image for ${{ env.IMAGE }} in ${{ env.NEXT_ENV }} to ${{ env.IMAGE_TAG }}"
   
   deploy:
     needs: update-env
@@ -62,5 +63,20 @@ jobs:
       - name: check
         run: |
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
-          kubectl wait -n hello-world-uat deployment/hello-world-uat --timeout=4m --for=condition=available
+          newsha=$(kubectl get -n flux-system kustomization ${{ env.APP_NAME }}-${{ env.NEXT_ENV }} -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
+          commitshort=$(git rev-parse main)
+          echo "$commitshort"
+          sha="$(git rev-parse ${commitshort})"
+          echo "Cluster currently has ${newsha} deployed."
+          echo "Waiting for ${sha} to be deployed."
+          echo "Cluster : Git"
+          until [ "$newsha" == "$sha" ]
+          do
+                  echo "Compared: $sha : $newsha"
+                  newsha=$(kubectl get -n flux-system kustomization ${{ env.APP_NAME }}-${{ env.NEXT_ENV }} -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
+                  echo "Not yet synced. Waiting for 5s.."
+                  sleep 5
+          done
+          echo "Reconcile Complete"
+          kubectl wait -n flux-system kustomization/${{ env.APP_NAME }}-${{ env.NEXT_ENV }} --for=condition=healthy --timeout=2m
         # we can add rollback here in future for failures
