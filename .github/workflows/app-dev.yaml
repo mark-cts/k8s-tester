@@ -92,11 +92,13 @@ jobs:
       - name: check
         run: |
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
-          newsha="fake"
+          newsha=$(kubectl get -n flux-system kustomization hello-world-dev -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
           commitshort=$(git rev-parse main)
           echo "$commitshort"
           sha="$(git rev-parse ${commitshort})"
+          echo "Cluster currently has ${newsha} deployed."
           echo "Waiting for ${sha} to be deployed."
+          echo "Cluster : Git"
           until [ "$newsha" == "$sha" ]
           do
                   echo "Compared: $sha : $newsha"
