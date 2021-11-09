@@ -20,12 +20,6 @@ def hello_notif():
     return resp
 
 
-# route test
-@app.route("/test")
-def hello_test():
-    return "Hello, test!"
-
-
 # healthcheck live
 @app.route("/healthz/live")
 def liveness():
