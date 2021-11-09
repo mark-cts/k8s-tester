@@ -96,8 +96,10 @@ jobs:
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
           newsha="fake"
           sha="$(git rev-parse ${{ needs.commit.outputs.sha }})"
+          echo "Waiting for ${sha} to be deployed."
           until [ "$newsha" == "$sha" ]
           do
+                  echo "Compared: $sha : $newsha"
                   newsha=$(kubectl get -n flux-system kustomization hello-world-dev -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
                   echo "Not yet synced. Waiting for 5s.."
                   sleep 5
