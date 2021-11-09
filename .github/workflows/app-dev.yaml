@@ -55,6 +55,8 @@ jobs:
     name: Commit
     environment: dev
     runs-on: ubuntu-latest
+    outputs:
+      new_sha: ${{ steps.push.outputs.commit_sha }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -76,6 +78,8 @@ jobs:
   deploy:
     needs: commit
     name: deploy
+    env:
+      commit_sha: ${{ needs.commit.outputs.new_sha }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -93,7 +97,11 @@ jobs:
         run: |
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
           newsha=$(kubectl get -n flux-system kustomization hello-world-dev -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
-          commitshort=$(git rev-parse main)
+          commitshort="${{ env.commit_sha }}"
+          if [ -z "${commitshort}"]
+          then
+              commitshort=$(git rev-parse main)
+          fi
           echo "$commitshort"
           sha="$(git rev-parse ${commitshort})"
           echo "Cluster currently has ${newsha} deployed."
