@@ -55,6 +55,8 @@ jobs:
     name: Commit
     environment: dev
     runs-on: ubuntu-latest
+    outputs: 
+      sha: ${{ steps.commit.outputs.commit_sha }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -92,5 +94,14 @@ jobs:
       - name: check
         run: |
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
-          kubectl wait -n hello-world-dev deployment/hello-world-dev --timeout=4m --for=condition=available
+          newsha="fake"
+          sha="$(git rev-parse ${{ needs.commit.outputs.sha }})"
+          until [ "$newsha" == "$sha" ]
+          do
+                  newsha=$(kubectl get -n flux-system kustomization hello-world-dev -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
+                  echo "Not yet synced. Waiting for 5s.."
+                  sleep 5
+          done
+          echo "Reconcile Complete"
+          kubectl wait -n flux-system kustomization/hello-world-dev --for=condition=healthy --timeout=2m
         # we can add rollback here in future for failures
