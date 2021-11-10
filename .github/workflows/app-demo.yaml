@@ -15,7 +15,6 @@ env:
 jobs:
   update-env:
     name: Update Image
-    if: github.event.state == 'success' && github.event.commit.commit.author.name == 'ci' && contains(github.event.commit.commit.message, 'live') && github.event.context == 'kustomization/hello-world-live' # kustomize/dep-name
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
