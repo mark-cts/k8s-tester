@@ -53,7 +53,6 @@ jobs:
   commit:
     needs: build
     name: Commit
-    environment: dev
     runs-on: ubuntu-latest
     outputs:
       new_sha: ${{ steps.setout.outputs.commitsha }}
