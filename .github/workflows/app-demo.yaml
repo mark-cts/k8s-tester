@@ -69,7 +69,7 @@ jobs:
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
           newsha=$(kubectl get -n flux-system kustomization ${{ env.APP_NAME }}-${{ env.ENV }} -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
           git pull
-          commitshort="${{ needs.commit.outputs.sha }}"
+          commitshort="${{ needs.update-env.outputs.sha }}"
           sha="$(git rev-parse ${commitshort})"
           echo "Cluster currently has ${newsha} deployed."
           echo "Waiting for ${sha} to be deployed."

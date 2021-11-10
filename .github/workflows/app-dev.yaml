@@ -50,9 +50,9 @@ jobs:
         run: |
           docker push ${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.GITHUB_SHA }}
 
-  commit:
+  update-env:
     needs: build
-    name: Commit
+    name: Update Image
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.commit.outputs.commit_sha }}
@@ -76,7 +76,7 @@ jobs:
           message: "Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.GITHUB_SHA }}"
   
   deploy:
-    needs: commit
+    needs: update-env
     name: deploy
     runs-on: ubuntu-latest
     steps:
@@ -96,7 +96,7 @@ jobs:
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
           newsha=$(kubectl get -n flux-system kustomization hello-world-dev -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
           git pull
-          commitshort="${{ needs.commit.outputs.sha }}"
+          commitshort="${{ needs.update-env.outputs.sha }}"
           sha="$(git rev-parse ${commitshort})"
           echo "Cluster currently has ${newsha} deployed."
           echo "Waiting for ${sha} to be deployed."
