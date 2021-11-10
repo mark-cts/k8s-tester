@@ -57,6 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new_sha: ${{ steps.setout.outputs.commitsha }}
+      sha: ${{ steps.push.outputs.commit_sha }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -68,6 +69,7 @@ jobs:
           kustomize edit set image ${{ env.IMAGE }}=${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.GITHUB_SHA }}
           kustomize build .
       - name: push
+        id: push
         uses: EndBug/add-and-commit@v7
         with:
           add: infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
@@ -101,6 +103,7 @@ jobs:
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
           newsha=$(kubectl get -n flux-system kustomization hello-world-dev -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
           commitshort="${{ needs.commit.outputs.new_sha }}"
+          echo "${{ needs.commit.outputs.sha }}"
           if [ -z "${commitshort}"]
           then
               commitshort=$(git rev-parse main)
