@@ -55,7 +55,6 @@ jobs:
     name: Commit
     runs-on: ubuntu-latest
     outputs:
-      new_sha: ${{ steps.setout.outputs.commitsha }}
       sha: ${{ steps.push.outputs.commit_sha }}
     steps:
       - uses: actions/checkout@v2
@@ -75,11 +74,6 @@ jobs:
           author_name: "ci"
           author_email: "ci@gingerninja.co"
           message: "Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.GITHUB_SHA }}"
-      - name: setout
-        run: |
-          commitsha="${{ steps.push.outputs.commit_sha }}"
-          echo $commitsha
-          echo "::set-output name=commitsha::$commitsha"
   
   deploy:
     needs: commit
@@ -101,20 +95,14 @@ jobs:
         run: |
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
           newsha=$(kubectl get -n flux-system kustomization hello-world-dev -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
-          commitshort="${{ needs.commit.outputs.new_sha }}"
-          echo "${{ needs.commit.outputs.sha }}"
-          if [ -z "${commitshort}"]
-          then
-              commitshort=$(git rev-parse main)
-          fi
-          echo "$commitshort"
+          commitshort="${{ needs.commit.outputs.sha }}"
           sha="$(git rev-parse ${commitshort})"
           echo "Cluster currently has ${newsha} deployed."
           echo "Waiting for ${sha} to be deployed."
           echo "Cluster : Git"
           until [ "$newsha" == "$sha" ]
           do
-                  echo "Compared: $sha : $newsha"
+                  echo "Compared: $newsha : $sha"
                   newsha=$(kubectl get -n flux-system kustomization hello-world-dev -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
                   echo "Not yet synced. Waiting for 5s.."
                   sleep 5
