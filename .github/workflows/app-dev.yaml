@@ -56,7 +56,7 @@ jobs:
     environment: dev
     runs-on: ubuntu-latest
     outputs:
-      new_sha: ${{ steps.push.outputs.commit_sha }}
+      new_sha: ${{ steps.setout.outputs.commitsha }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -74,12 +74,15 @@ jobs:
           author_name: "ci"
           author_email: "ci@gingerninja.co"
           message: "Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.GITHUB_SHA }}"
+      - name: setout
+        run: |
+          commitsha="${{ steps.push.outputs.commit_sha }}"
+          echo $commitsha
+          echo "::set-output name=commitsha::$commitsha"
   
   deploy:
     needs: commit
     name: deploy
-    env:
-      commit_sha: ${{ needs.commit.outputs.new_sha }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -97,7 +100,7 @@ jobs:
         run: |
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
           newsha=$(kubectl get -n flux-system kustomization hello-world-dev -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
-          commitshort="${{ env.commit_sha }}"
+          commitshort="${{ needs.commit.outputs.new_sha }}"
           if [ -z "${commitshort}"]
           then
               commitshort=$(git rev-parse main)
