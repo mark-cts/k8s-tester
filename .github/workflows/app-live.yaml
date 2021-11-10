@@ -42,7 +42,7 @@ jobs:
           echo "Cluster : Git"
           until [ "$newsha" == "$sha" ]
           do
-                  echo "Compared: $sha : $newsha"
+                  echo "Compared: $newsha : $sha"
                   newsha=$(kubectl get -n flux-system kustomization ${{ env.APP_NAME }}-${{ env.ENV }} -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
                   echo "Not yet synced. Waiting for 5s.."
                   sleep 5

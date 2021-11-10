@@ -19,6 +19,8 @@ jobs:
   update-env:
     name: Update Image
     runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.commit.outputs.commit_sha }}
     steps:
       - uses: actions/checkout@v2
       - uses: imranismail/setup-kustomize@v1
@@ -37,6 +39,7 @@ jobs:
           export_default_credentials: true
           credentials_file_path: /tmp/key.json
       - name: commit
+        id: commit
         uses: EndBug/add-and-commit@v7
         with:
           add: infra/k8s/overlays/${{ env.NEXT_ENV }}/kustomization.yaml
@@ -64,15 +67,15 @@ jobs:
         run: |
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
           newsha=$(kubectl get -n flux-system kustomization ${{ env.APP_NAME }}-${{ env.NEXT_ENV }} -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
-          commitshort=$(git rev-parse main)
-          echo "$commitshort"
+          git pull
+          commitshort="${{ needs.commit.outputs.sha }}"
           sha="$(git rev-parse ${commitshort})"
           echo "Cluster currently has ${newsha} deployed."
           echo "Waiting for ${sha} to be deployed."
           echo "Cluster : Git"
           until [ "$newsha" == "$sha" ]
           do
-                  echo "Compared: $sha : $newsha"
+                  echo "Compared: $newsha : $sha"
                   newsha=$(kubectl get -n flux-system kustomization ${{ env.APP_NAME }}-${{ env.NEXT_ENV }} -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
                   echo "Not yet synced. Waiting for 5s.."
                   sleep 5

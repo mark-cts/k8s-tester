@@ -10,20 +10,25 @@ env:
   NONPROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
   PROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images-prod
   PROJECT_ID: markbox-cts
-  env: live
-  next_env: demo
+  ENV_PREV: live
+  ENV: demo
+  APP_NAME: hello-world
+  CLUSTER_NAME: tester
+  CLUSTER_REGION: europe-west1
 jobs:
   update-env:
     name: Update Image
     runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.commit.outputs.commit_sha }}
     steps:
       - uses: actions/checkout@v2
       - uses: imranismail/setup-kustomize@v1
       - name: set image
         run: |
-          export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.env }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
+          export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.ENV_PREV }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
           echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
-          cd infra/k8s/overlays/${{ env.next_env }}/
+          cd infra/k8s/overlays/${{ env.ENV }}/
           kustomize edit set image ${{ env.IMAGE }}=${{ env.PROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:$IMAGE_TAG
           kustomize build .
       # setup gcloud for gcr auth
@@ -34,9 +39,47 @@ jobs:
           export_default_credentials: true
           credentials_file_path: /tmp/key.json
       - name: commit
+        id: commit
         uses: EndBug/add-and-commit@v7
         with:
-          add: infra/k8s/overlays/${{ env.next_env }}/kustomization.yaml
+          add: infra/k8s/overlays/${{ env.ENV }}/kustomization.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
-          message: "Set image for ${{ env.IMAGE }} in ${{ env.next_env }} to ${{ env.IMAGE_TAG }}"
+          message: "Set image for ${{ env.IMAGE }} in ${{ env.ENV }} to ${{ env.IMAGE_TAG }}"
+  
+  deploy:
+    needs: update-env
+    name: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+      - uses: azure/setup-kubectl@v1
+      - uses: imranismail/setup-kustomize@v1
+      - uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
+          export_default_credentials: true
+          credentials_file_path: /tmp/key.json
+      - name: check
+        run: |
+          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
+          newsha=$(kubectl get -n flux-system kustomization ${{ env.APP_NAME }}-${{ env.ENV }} -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
+          git pull
+          commitshort="${{ needs.commit.outputs.sha }}"
+          sha="$(git rev-parse ${commitshort})"
+          echo "Cluster currently has ${newsha} deployed."
+          echo "Waiting for ${sha} to be deployed."
+          echo "Cluster : Git"
+          until [ "$newsha" == "$sha" ]
+          do
+                  echo "Compared: $newsha : $sha"
+                  newsha=$(kubectl get -n flux-system kustomization ${{ env.APP_NAME }}-${{ env.ENV }} -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
+                  echo "Not yet synced. Waiting for 5s.."
+                  sleep 5
+          done
+          echo "Reconcile Complete"
+          kubectl wait -n flux-system kustomization/${{ env.APP_NAME }}-${{ env.ENV }} --for=condition=healthy --timeout=2m
+        # we can add rollback here in future for failures

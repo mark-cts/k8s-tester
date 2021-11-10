@@ -55,7 +55,7 @@ jobs:
     name: Commit
     runs-on: ubuntu-latest
     outputs:
-      sha: ${{ steps.push.outputs.commit_sha }}
+      sha: ${{ steps.commit.outputs.commit_sha }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -66,8 +66,8 @@ jobs:
           cd infra/k8s/overlays/${{ env.ENVIRONMENT }}/
           kustomize edit set image ${{ env.IMAGE }}=${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.GITHUB_SHA }}
           kustomize build .
-      - name: push
-        id: push
+      - name: commit
+        id: commit
         uses: EndBug/add-and-commit@v7
         with:
           add: infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
