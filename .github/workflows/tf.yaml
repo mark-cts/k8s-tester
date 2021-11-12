@@ -136,11 +136,15 @@ jobs:
           script: |
             const output = `#### Terraform Validation for ${{ matrix.plans }} 🤖\`${{ steps.validate.outcome }}\`
             #### Terraform Plan for ${{ matrix.plans }}📖\`${{ steps.plan.outcome }}\`
+
             <details><summary>Show Plan</summary>
-            \`\`\` 
+
+            \`\`\`\nterraform\n
             ${{ steps.plan.outputs.stdout }}
             \`\`\`
+
             </details>
+
             *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
             github.issues.createComment({
               issue_number: context.issue.number,
