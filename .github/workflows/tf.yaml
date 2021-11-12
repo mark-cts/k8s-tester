@@ -32,7 +32,7 @@ jobs:
         with:
           sha: ${{ github.event.pull_request.head.sha }}
           files: |
-            infra/tf/terraform/**
+            infra/tf/environments/*yaml
       - name: Check changes
         id: check
         run: |
@@ -129,6 +129,8 @@ jobs:
           echo "Running plan for $filename"
           TG_ENVIRONMENT=$filename terragrunt run-all plan -no-color --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive 2>&1
         continue-on-error: true
+      - name: debug
+        run: ${{ toJson(steps.plan.outputs) }}
       - name: Update Pull Request
         uses: actions/github-script@0.9.0
         if: github.event_name == 'pull_request'
