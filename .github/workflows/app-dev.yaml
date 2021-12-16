@@ -1,6 +1,7 @@
 name: App Build/Deploy Dev
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -8,14 +9,14 @@ on:
       - app/**
 
 env:
-  GITHUB_SHA: ${{ github.sha }} 
-  GITHUB_REF: ${{ github.ref }} 
   IMAGE: hello-world
-  REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
+  NONPROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
   PROJECT_ID: markbox-cts
   ENVIRONMENT: dev
   CLUSTER_NAME: tester
   CLUSTER_REGION: europe-west1
+  APP_NAME: hello-world
+  ENV: dev
 
 jobs:
   build:
@@ -39,7 +40,7 @@ jobs:
           gcloud auth configure-docker europe-west1-docker.pkg.dev
       - name: Build
         run: |
-          docker build -t ${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.GITHUB_SHA }} app/
+          docker build -t ${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ github.sha }}-${{ github.run_number }} app/
       - name: login
         uses: docker/login-action@v1
         with:
@@ -48,7 +49,7 @@ jobs:
           password: ${{ secrets.GCLOUD_SERVICE_KEY }}
       - name: push
         run: |
-          docker push ${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.GITHUB_SHA }}
+          docker push ${{ env.NONPROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ github.sha }}-${{ github.run_number }}
 
   update-env:
     needs: build
@@ -63,17 +64,17 @@ jobs:
       - uses: imranismail/setup-kustomize@v1
       - name: set image
         run: |
-          cd infra/k8s/overlays/${{ env.ENVIRONMENT }}/
-          kustomize edit set image ${{ env.IMAGE }}=${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.GITHUB_SHA }}
+          cd infra/k8s/overlays/${{ env.ENV }}/
+          kustomize edit set image ${{ env.IMAGE }}=${{ env.NONPROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ github.sha }}-${{ github.run_number }}
           kustomize build .
       - name: commit
         id: commit
         uses: EndBug/add-and-commit@v7
         with:
-          add: infra/k8s/overlays/${{ env.ENVIRONMENT }}/kustomization.yaml
+          add: infra/k8s/overlays/${{ env.ENV }}/kustomization.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
-          message: "Set image for ${{ env.IMAGE }} in ${{ env.ENVIRONMENT }} to ${{ env.GITHUB_SHA }}"
+          message: "Set image for ${{ env.IMAGE }} in ${{ env.ENV }} to ${{ github.sha }}-${{ github.run_number }}"
   
   deploy:
     needs: update-env
@@ -91,23 +92,37 @@ jobs:
           service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
           export_default_credentials: true
           credentials_file_path: /tmp/key.json
+      - name: get-gke-creds
+        uses: google-github-actions/get-gke-credentials@main
+        with:
+          cluster_name: ${{ env.CLUSTER_NAME }}
+          location: ${{ env.CLUSTER_REGION }}
       - name: check
         run: |
-          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
-          newsha=$(kubectl get -n flux-system kustomization hello-world-dev -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
+          newsha=$(kubectl get -n ${{ env.APP_NAME }}-${{ env.ENV }} kustomization/flux-kustomization -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
           git pull
           commitshort="${{ needs.update-env.outputs.sha }}"
           sha="$(git rev-parse ${commitshort})"
           echo "Cluster currently has ${newsha} deployed."
           echo "Waiting for ${sha} to be deployed."
           echo "Cluster : Git"
-          until [ "$newsha" == "$sha" ]
+          counter=0
+          until [[ "$newsha" == "$sha" || $counter -gt 120 ]] # 120x5 == 10mins
           do
                   echo "Compared: $newsha : $sha"
-                  newsha=$(kubectl get -n flux-system kustomization hello-world-dev -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
+                  newsha=$(kubectl get -n ${{ env.APP_NAME }}-${{ env.ENV }} kustomization/flux-kustomization -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
                   echo "Not yet synced. Waiting for 5s.."
                   sleep 5
+                  counter=$(($counter+1))
           done
-          echo "Reconcile Complete"
-          kubectl wait -n flux-system kustomization/hello-world-dev --for=condition=healthy --timeout=2m
-        # we can add rollback here in future for failures
+          if [[ $counter -gt 120 ]]
+          then
+                  echo ""
+                  echo "*Deployment failed. Requires investigation.*"
+                  # look at rollback here
+          else
+                  echo "Reconcile Complete"
+          fi
+          kubectl wait -n ${{ env.APP_NAME }}-${{ env.ENV }} kustomization/flux-kustomization --for=condition=healthy --timeout=5m
+        # Add rollback here
+        # add integration tests here too

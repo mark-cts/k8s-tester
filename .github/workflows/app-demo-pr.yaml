@@ -1,4 +1,4 @@
-name: App Create Live PR
+name: App Create Demo PR
 on: 
   workflow_dispatch:
   workflow_run:
@@ -7,15 +7,15 @@ on:
     types:
       - completed
 env:
+  PREV_ENV: uat
+  ENV: demo
   IMAGE: hello-world
+  APP_NAME: hello-world
   NONPROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
   PROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images-prod
   PROJECT_ID: markbox-cts
-  PREV_ENV: uat
-  ENV: live
-  APP_NAME: hello-world
-  CLUSTER_NAME: tester
-  CLUSTER_REGION: europe-west1
+  CLUSTER_NAME: ki-nonproduction
+  CLUSTER_REGION: europe-west2
 jobs:
   check-env:
     name: Check environment
@@ -45,6 +45,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: check-env-live # we dont want to carry on if that env doesnt exist yet
+        run: |
+          if [ ! -d "infra/k8s/overlays/live" ]
+          then
+            echo "Live does not exist, copying image here as its done in live workflows."
+            check="true"
+          else
+            echo "Live exists. Image copy is done in live workflow."
+            check="false"
+          fi
+          echo "::set-output name=exists::$check"
       - uses: imranismail/setup-kustomize@v1
       - name: set image
         run: |
@@ -61,31 +72,37 @@ jobs:
           export_default_credentials: true
           credentials_file_path: /tmp/key.json
       - run: |
-          gcloud auth configure-docker europe-west1-docker.pkg.dev
+          gcloud auth configure-docker europe-docker.pkg.dev
+        if: steps.check-env-live.outputs.exists == 'false'
       - name: login
+        if: steps.check-env-live.outputs.exists == 'false'
         uses: docker/login-action@v1
         with:
           registry: ${{ env.NONPROD_REGISTRY_HOSTNAME }}
           username: _json_key
           password: ${{ secrets.GCLOUD_SERVICE_KEY }}
       - name: Push Image to prod from nonprod
+        if: steps.check-env-live.outputs.exists == 'false'
         run: |
           docker pull "${{ env.NONPROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.IMAGE_TAG }}"
+          echo '${{ secrets.GCLOUD_SERVICE_KEY }}' > /tmp/key-prod.json
+          gcloud auth activate-service-account -q "$(cat '/tmp/key-prod.json' | jq -r '.client_email')" --key-file "/tmp/key-prod.json"
+          gcloud auth configure-docker -q "europe-docker.pkg.dev"
           docker tag "${{ env.NONPROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.IMAGE_TAG }}" "${{ env.PROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.IMAGE_TAG }}"
           docker push "${{ env.PROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.IMAGE_TAG }}"
       - name: commit
         uses: EndBug/add-and-commit@v7
         with:
           add: infra/k8s/overlays/${{ env.ENV }}/kustomization.yaml
-          author_name: "ci"
-          author_email: "ci@gingerninja.co"
+          author_name: "ki-cicd"
+          author_email: "ki-cicd@ki-insurance.com"
           message: "Set image for ${{ env.IMAGE }} in ${{ env.ENV }} to ${{ env.IMAGE_TAG }}"
           push: false
       - name: Create PR
         id: create-pr
         uses: peter-evans/create-pull-request@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_TOKEN }}
           base: main # branch to merge into
           commit-message: Deploy changes to ${{ env.ENV }}
           committer: ki-cicd <ki-cicd@ki-insurance.com">
@@ -102,8 +119,8 @@ jobs:
           labels: |
             automated
             infra
-          assignees: Bltt
-          reviewers: mark-cts
+          assignees: "@Ki-Insurance/ki-web-backend"
+          reviewers: "@Ki-Insurance/release-approvers"
           team-reviewers: |
-            owners
+            @Ki-Insurance/ki-web-backend
           draft: false

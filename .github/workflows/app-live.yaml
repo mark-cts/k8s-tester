@@ -6,9 +6,6 @@ on:
     paths:
       - infra/k8s/overlays/live/**
 env:
-  IMAGE: hello-world
-  NONPROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
-  PROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images-prod
   PROJECT_ID: markbox-cts
   ENV: live
   APP_NAME: hello-world
@@ -30,23 +27,41 @@ jobs:
           service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
           export_default_credentials: true
           credentials_file_path: /tmp/key.json
+      - name: get-gke-creds
+        uses: google-github-actions/get-gke-credentials@main
+        with:
+          cluster_name: ${{ env.CLUSTER_NAME }}
+          location: ${{ env.CLUSTER_REGION }}
       - name: check
         run: |
-          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
-          newsha=$(kubectl get -n flux-system kustomization ${{ env.APP_NAME }}-${{ env.ENV }} -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
-          commitshort=$(git rev-parse main)
-          echo "$commitshort"
+          newsha=$(kubectl get -n ${{ env.APP_NAME }}-${{ env.ENV }} kustomization/flux-kustomization -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
+          git pull
+          commitshort="${{ env.GITHUB_SHA }}"
           sha="$(git rev-parse ${commitshort})"
+          if [[ "$sha" == "" ]]
+          then
+                  sha="$(git rev-parse HEAD)"
+          fi
           echo "Cluster currently has ${newsha} deployed."
           echo "Waiting for ${sha} to be deployed."
           echo "Cluster : Git"
-          until [ "$newsha" == "$sha" ]
+          counter=0
+          until [[ "$newsha" == "$sha" || $counter -gt 120 ]] # 120x5 == 10mins
           do
                   echo "Compared: $newsha : $sha"
-                  newsha=$(kubectl get -n flux-system kustomization ${{ env.APP_NAME }}-${{ env.ENV }} -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
+                  newsha=$(kubectl get -n ${{ env.APP_NAME }}-${{ env.ENV }} kustomization/flux-kustomization -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
                   echo "Not yet synced. Waiting for 5s.."
                   sleep 5
+                  counter=$(($counter+1))
           done
-          echo "Reconcile Complete"
-          kubectl wait -n flux-system kustomization/${{ env.APP_NAME }}-${{ env.ENV }} --for=condition=healthy --timeout=2m
-        # we can add rollback here in future for failures
+          if [[ $counter -gt 120 ]]
+          then
+                  echo ""
+                  echo "*Deployment failed. Requires investigation.*"
+                  # look at rollback here
+          else
+                  echo "Reconcile Complete"
+          fi
+          kubectl wait -n ${{ env.APP_NAME }}-${{ env.ENV }} kustomization/flux-kustomization --for=condition=healthy --timeout=5m
+        # Add rollback here
+        # add integration tests here too

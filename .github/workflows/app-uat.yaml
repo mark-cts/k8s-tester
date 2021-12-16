@@ -1,5 +1,6 @@
 name: App Deploy UAT
 on:
+  workflow_dispatch:
   workflow_run:
     workflows: ["App Build/Deploy Dev"]
     branches: [main]
@@ -10,45 +11,60 @@ env:
   NONPROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
   PROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images-prod
   PROJECT_ID: markbox-cts
-  ENV: dev
+  PREV_ENV: dev
+  ENV: uat
   APP_NAME: hello-world
-  NEXT_ENV: uat
   CLUSTER_NAME: tester
   CLUSTER_REGION: europe-west1
 jobs:
+  check-env:
+    name: Check environment
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    outputs: 
+      check: ${{ steps.check.outputs.check }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: check # we dont want to carry on if that env doesnt exist yet
+        id: check
+        run: |
+          dir="infra/k8s/overlays/${{ env.ENV }}/"
+          if [ ! -d "$dir" ]
+          then
+            echo "Env does not exist, skipping."
+            check="false"
+          else
+            echo "Env exists"
+            check="true"
+          fi
+          echo "::set-output name=check::$check"
   update-env:
     name: Update Image
-    if: github.event.workflow_run.conclusion == 'success'
+    needs: check-env
+    if: ${{ needs.check-env.outputs.check == 'true' && (github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' ) }}
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.commit.outputs.commit_sha }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GH_TOKEN }}
       - uses: imranismail/setup-kustomize@v1
-      - name: output
-        run: echo "${{ toJSON(github) }}"
       - name: set image
         run: |
-          export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.ENV }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
+          export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.PREV_ENV }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
           echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
-          cd infra/k8s/overlays/${{ env.NEXT_ENV }}/
+          cd infra/k8s/overlays/${{ env.ENV }}/
           kustomize edit set image ${{ env.IMAGE }}=${{ env.NONPROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:$IMAGE_TAG
           kustomize build .
-      # setup gcloud for gcr auth
-      - uses: google-github-actions/setup-gcloud@master
-        with:
-          project_id: ${{ env.PROJECT_ID }}
-          service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
-          export_default_credentials: true
-          credentials_file_path: /tmp/key.json
       - name: commit
         id: commit
         uses: EndBug/add-and-commit@v7
         with:
-          add: infra/k8s/overlays/${{ env.NEXT_ENV }}/kustomization.yaml
+          add: infra/k8s/overlays/${{ env.ENV }}/kustomization.yaml
           author_name: "ci"
           author_email: "ci@gingerninja.co"
-          message: "Set image for ${{ env.IMAGE }} in ${{ env.NEXT_ENV }} to ${{ env.IMAGE_TAG }}"
+          message: "Set image for ${{ env.IMAGE }} in ${{ env.ENV }} to ${{ env.IMAGE_TAG }}"
   
   deploy:
     needs: update-env
@@ -66,23 +82,41 @@ jobs:
           service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
           export_default_credentials: true
           credentials_file_path: /tmp/key.json
+      - name: get-gke-creds
+        uses: google-github-actions/get-gke-credentials@main
+        with:
+          cluster_name: ${{ env.CLUSTER_NAME }}
+          location: ${{ env.CLUSTER_REGION }}
       - name: check
         run: |
-          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --region ${{ env.CLUSTER_REGION }} --project ${{ env.PROJECT_ID }}
-          newsha=$(kubectl get -n flux-system kustomization ${{ env.APP_NAME }}-${{ env.NEXT_ENV }} -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
+          newsha=$(kubectl get -n ${{ env.APP_NAME }}-${{ env.ENV }} kustomization/flux-kustomization -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
           git pull
           commitshort="${{ needs.update-env.outputs.sha }}"
           sha="$(git rev-parse ${commitshort})"
+          if [ -z "$sha" ]
+          then
+            sha=$(git rev-parse main)
+          fi
           echo "Cluster currently has ${newsha} deployed."
           echo "Waiting for ${sha} to be deployed."
           echo "Cluster : Git"
-          until [ "$newsha" == "$sha" ]
+          counter=0
+          until [[ "$newsha" == "$sha" || $counter -gt 120 ]] # 120x5 == 10mins
           do
                   echo "Compared: $newsha : $sha"
-                  newsha=$(kubectl get -n flux-system kustomization ${{ env.APP_NAME }}-${{ env.NEXT_ENV }} -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
+                  newsha=$(kubectl get -n ${{ env.APP_NAME }}-${{ env.ENV }} kustomization/flux-kustomization -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
                   echo "Not yet synced. Waiting for 5s.."
                   sleep 5
+                  counter=$(($counter+1))
           done
-          echo "Reconcile Complete"
-          kubectl wait -n flux-system kustomization/${{ env.APP_NAME }}-${{ env.NEXT_ENV }} --for=condition=healthy --timeout=2m
-        # we can add rollback here in future for failures
+          if [[ $counter -gt 120 ]]
+          then
+                  echo ""
+                  echo "*Deployment failed. Requires investigation.*"
+                  # look at rollback here
+          else
+                  echo "Reconcile Complete"
+          fi
+          kubectl wait -n ${{ env.APP_NAME }}-${{ env.ENV }} kustomization/flux-kustomization --for=condition=healthy --timeout=5m
+        # Add rollback here
+        # add integration tests here too
