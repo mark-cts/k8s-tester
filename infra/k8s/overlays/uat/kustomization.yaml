@@ -5,6 +5,7 @@ nameSuffix: -uat
 
 resources:
 - ../../base
+- ingress.yaml
 
 images:
 - name: hello-world

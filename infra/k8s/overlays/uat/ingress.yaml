@@ -8,14 +8,14 @@ metadata:
     kubernetes.io/ingress.class: "gce"
 spec:
   rules:
-  - host: dev.py.gingerninja.co
+  - host: uat.py.gingerninja.co
     http:
       paths:
       - path: /*
         pathType: ImplementationSpecific
         backend:
           service:
-            name: hello-world-dev
+            name: hello-world-uat
             port:
               number: 80
 ---
@@ -25,4 +25,4 @@ metadata:
   name: hello-cert
 spec:
   domains:
-    - dev.py.gingerninja.co
+    - uat.py.gingerninja.co
