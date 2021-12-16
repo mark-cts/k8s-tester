@@ -5,14 +5,12 @@ nameSuffix: -dev
 
 resources:
 - ../../base
+- ingress.yaml
 
 images:
 - name: hello-world
   newName: europe-west1-docker.pkg.dev/markbox-cts/images/hello-world
   newTag: d49eddbb91643e69584d24858d6a05da855edaf7-36
-- name: hello-world-2
-  newName: europe-west1-docker.pkg.dev/markbox-cts/images/hello-world
-  newTag: wrongs
 
 commonLabels:
   env: dev
