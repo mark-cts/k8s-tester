@@ -89,7 +89,7 @@ jobs:
           location: ${{ env.CLUSTER_REGION }}
       - name: check
         run: |
-          newsha=$(kubectl get -n ${{ env.APP_NAME }}-${{ env.ENV }} kustomization/flux-kustomization -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
+          newsha=$(kubectl get -n flux-system kustomization/${{ env.APP_NAME }}-${{ env.ENV }} -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
           git pull
           commitshort="${{ needs.update-env.outputs.sha }}"
           sha="$(git rev-parse ${commitshort})"
@@ -104,7 +104,7 @@ jobs:
           until [[ "$newsha" == "$sha" || $counter -gt 120 ]] # 120x5 == 10mins
           do
                   echo "Compared: $newsha : $sha"
-                  newsha=$(kubectl get -n ${{ env.APP_NAME }}-${{ env.ENV }} kustomization/flux-kustomization -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
+                  newsha=$(kubectl get -n flux-system kustomization/${{ env.APP_NAME }}-${{ env.ENV }} -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
                   echo "Not yet synced. Waiting for 5s.."
                   sleep 5
                   counter=$(($counter+1))
@@ -117,6 +117,6 @@ jobs:
           else
                   echo "Reconcile Complete"
           fi
-          kubectl wait -n ${{ env.APP_NAME }}-${{ env.ENV }} kustomization/flux-kustomization --for=condition=healthy --timeout=5m
+          kubectl wait -n flux-system kustomization/${{ env.APP_NAME }}-${{ env.ENV }} --for=condition=healthy --timeout=5m
         # Add rollback here
         # add integration tests here too
