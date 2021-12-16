@@ -10,7 +10,7 @@ resources:
 images:
 - name: hello-world
   newName: europe-west1-docker.pkg.dev/markbox-cts/images-prod/hello-world
-  newTag: 0d0d5485e2d4d32a8e3f57da6e65470b08bc60dc
+  newTag: 9f3adc10f3180307dc869b5e26167e6eda7e30ad-37
 
 commonLabels:
   env: live
