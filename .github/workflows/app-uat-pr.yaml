@@ -50,7 +50,7 @@ jobs:
           export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.PREV_ENV }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
           echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
           cd infra/k8s/overlays/${{ env.ENV }}/
-          kustomize edit set image ${{ env.IMAGE }}=${{ env.PROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:$IMAGE_TAG
+          kustomize edit set image ${{ env.IMAGE }}=${{ env.NONPROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:$IMAGE_TAG
           kustomize build .
       - name: commit
         uses: EndBug/add-and-commit@v7
