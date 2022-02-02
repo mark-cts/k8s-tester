@@ -1,73 +1,18 @@
 name: App Deploy UAT
-on:
-  workflow_dispatch:
-  workflow_run:
-    workflows: ["App Build/Deploy Dev"]
-    branches: [main]
-    types:
-      - completed
-env:
-  IMAGE: hello-world
-  NONPROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
-  PROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images-prod
-  PROJECT_ID: markbox-cts
-  PREV_ENV: dev
+on: 
+  push:
+    branches:
+      - main
+    paths:
+      - infra/k8s/overlays/uat/**
+env:  
   ENV: uat
   APP_NAME: hello-world
+  PROJECT_ID: markbox-cts
   CLUSTER_NAME: tester
   CLUSTER_REGION: europe-west1
 jobs:
-  check-env:
-    name: Check environment
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
-    runs-on: ubuntu-latest
-    outputs: 
-      check: ${{ steps.check.outputs.check }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: check # we dont want to carry on if that env doesnt exist yet
-        id: check
-        run: |
-          dir="infra/k8s/overlays/${{ env.ENV }}/"
-          if [ ! -d "$dir" ]
-          then
-            echo "Env does not exist, skipping."
-            check="false"
-          else
-            echo "Env exists"
-            check="true"
-          fi
-          echo "::set-output name=check::$check"
-  update-env:
-    name: Update Image
-    needs: check-env
-    if: ${{ needs.check-env.outputs.check == 'true' && (github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' ) }}
-    runs-on: ubuntu-latest
-    outputs:
-      sha: ${{ steps.commit.outputs.commit_sha }}
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.GH_TOKEN }}
-      - uses: imranismail/setup-kustomize@v1
-      - name: set image
-        run: |
-          export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.PREV_ENV }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
-          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
-          cd infra/k8s/overlays/${{ env.ENV }}/
-          kustomize edit set image ${{ env.IMAGE }}=${{ env.NONPROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:$IMAGE_TAG
-          kustomize build .
-      - name: commit
-        id: commit
-        uses: EndBug/add-and-commit@v7
-        with:
-          add: infra/k8s/overlays/${{ env.ENV }}/kustomization.yaml
-          author_name: "ci"
-          author_email: "ci@gingerninja.co"
-          message: "Set image for ${{ env.IMAGE }} in ${{ env.ENV }} to ${{ env.IMAGE_TAG }}"
-  
   deploy:
-    needs: update-env
     name: deploy
     runs-on: ubuntu-latest
     steps:
@@ -91,11 +36,11 @@ jobs:
         run: |
           newsha=$(kubectl get -n flux-system kustomization/${{ env.APP_NAME }}-${{ env.ENV }} -o=jsonpath='{.status.lastAppliedRevision}' | cut -d "/" -f 2)
           git pull
-          commitshort="${{ needs.update-env.outputs.sha }}"
+          commitshort="${{ env.GITHUB_SHA }}"
           sha="$(git rev-parse ${commitshort})"
-          if [ -z "$sha" ]
+          if [[ "$sha" == "" ]]
           then
-            sha=$(git rev-parse main)
+                  sha="$(git rev-parse HEAD)"
           fi
           echo "Cluster currently has ${newsha} deployed."
           echo "Waiting for ${sha} to be deployed."

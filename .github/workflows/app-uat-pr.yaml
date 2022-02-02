@@ -1,0 +1,88 @@
+name: App Create UAT PR
+on: 
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["App Build/Deploy Dev"]
+    branches: [main]
+    types:
+      - completed
+env:
+  PREV_ENV: dev
+  ENV: uat
+  IMAGE: hello-world
+  APP_NAME: hello-world
+  NONPROD_REGISTRY_HOSTNAME: europe-west1-docker.pkg.dev/markbox-cts/images
+  PROJECT_ID: markbox-cts
+  CLUSTER_NAME: ki-nonproduction
+  CLUSTER_REGION: europe-west2
+jobs:
+  check-env:
+    name: Check environment
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    outputs: 
+      check: ${{ steps.check.outputs.check }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: check # we dont want to carry on if that env doesnt exist yet
+        id: check
+        run: |
+          dir="infra/k8s/overlays/${{ env.ENV }}/"
+          if [ ! -d "$dir" ]
+          then
+            echo "Env does not exist, skipping."
+            check="false"
+          else
+            echo "Env exists"
+            check="true"
+          fi
+          echo "::set-output name=check::$check"
+  update-env:
+    name: Update Image
+    needs: check-env
+    if: ${{ needs.check-env.outputs.check == 'true' && (github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' ) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: imranismail/setup-kustomize@v1
+      - name: set image
+        run: |
+          export IMAGE_TAG=$(yq e '.images' infra/k8s/overlays/${{ env.PREV_ENV }}/kustomization.yaml -o=json | jq -r ".[] | select(.name==\"${{ env.IMAGE }}\") | .newTag")
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+          cd infra/k8s/overlays/${{ env.ENV }}/
+          kustomize edit set image ${{ env.IMAGE }}=${{ env.PROD_REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:$IMAGE_TAG
+          kustomize build .
+      - name: commit
+        uses: EndBug/add-and-commit@v7
+        with:
+          add: infra/k8s/overlays/${{ env.ENV }}/kustomization.yaml
+          author_name: "ki-cicd"
+          author_email: "ki-cicd@ki-insurance.com"
+          message: "Set image for ${{ env.IMAGE }} in ${{ env.ENV }} to ${{ env.IMAGE_TAG }}"
+          push: false
+      - name: Create PR
+        id: create-pr
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          base: main # branch to merge into
+          commit-message: Deploy changes to ${{ env.ENV }}
+          committer: ki-cicd <ki-cicd@ki-insurance.com">
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          signoff: false
+          branch: k8-${{ env.ENV }}
+          delete-branch: true
+          title: '[CI] Deploy ${{ env.IMAGE_TAG }} to ${{ env.ENV }}'
+          body: |
+            *Automated PR*
+
+            This PR is to deploy changes to *${{ env.ENV }}*
+            Artifact moved: ${{ env.IMAGE_TAG }}
+          labels: |
+            automated
+            infra
+          assignees: "@Ki-Insurance/ki-web-backend"
+          reviewers: "@Ki-Insurance/release-approvers"
+          team-reviewers: |
+            @Ki-Insurance/ki-web-backend
+          draft: false

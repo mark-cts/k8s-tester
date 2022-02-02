@@ -1,0 +1,133 @@
+name: Terraform Dev Apply
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'infra/tf/environments/dev.yaml'
+  workflow_dispatch:
+env:
+  ENV: dev
+  NEXT_ENV: uat
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    name: "Terragrunt apply"
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.0.4
+          terraform_wrapper: false
+      - name: Setup Terragrunt
+        uses: autero1/action-terragrunt@v1.1.0
+        with:
+          terragrunt_version: 0.31.4
+      - name: Set Env
+        run: |
+          env="${{ env.ENV }}"
+          ENV=${env^^}
+          echo "ENVIRONMENT=$ENV" >> $GITHUB_ENV
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v0.2.1
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v0.4.1
+        with:
+          credentials_json: "${{ secrets[format('KI_CICD_KEY_{0}', env.ENVIRONMENT)] }}"
+      - name: setup deploy key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
+      - name: Terragrunt Validate
+        id: validate
+        run : |
+          echo "Validating for ${{ env.ENV }}"
+          cd infra/tf/
+          TG_ENVIRONMENT=${{ env.ENV }} terragrunt run-all validate --terragrunt-working-dir terragrunt/ --terragrunt-include-external-dependencies --terragrunt-non-interactive 2>&1
+      - name: Terragrunt Apply
+        run: |
+          echo "Running Apply for ${{ env.ENV }}"
+          cd infra/tf/
+          TG_ENVIRONMENT=${{ env.ENV }} terragrunt run-all apply -auto-approve --terragrunt-working-dir terragrunt/ --terragrunt-include-external-dependencies --terragrunt-non-interactive 2>&1
+      - name: Terragrunt Apply Status
+        if: steps.apply.outcome == 'failure'
+        run: exit 1
+      - name: check # we dont want to carry on if that env doesnt exist yet
+        id: check
+        run: |
+          file="infra/tf/environments/${{ env.NEXT_ENV }}.yaml"
+          if [ ! -f "$file" ]
+          then
+            echo "Env does not exist, skipping."
+            check="false"
+          else
+            echo "Env exists"
+            check="true"
+          fi
+          echo "::set-output name=check::$check"
+      # make PR on next env
+      - name: update next environment
+        if: steps.check.outputs.check == 'true'
+        run: |          
+          VAL=$(yq e '.auto_module_versions' infra/tf/environments/${{ env.ENV }}.yaml) yq e '.auto_module_versions |= env(VAL)' -i infra/tf/environments/${{ env.NEXT_ENV }}.yaml
+          VAL=$(yq e '.auto_module_versions' infra/tf/environments/${{ env.ENV }}.yaml) yq e '.auto_module_versions |= env(VAL)' infra/tf/environments/${{ env.NEXT_ENV }}.yaml
+      - name: commit ${{ matrix.plans }}
+        id: commit
+        if: steps.check.outputs.check == 'true'
+        uses: EndBug/add-and-commit@v7
+        with:
+          add: infra/tf/environments/${{ env.NEXT_ENV }}.yaml
+          author_name: "ki-cicd"
+          author_email: "ki-cicd@ki-insurance.com"
+          message: "Deploy changes to ${{ env.NEXT_ENV }} from ${{ env.ENV }}"
+          push: false
+      - name: get original commit # todo: check this always works
+        if: steps.check.outputs.check == 'true'
+        run: |
+          export COMM=$(git rev-list main -1 infra/tf/environments/dev.yaml)
+          echo "orig_commit=$COMM" >> $GITHUB_ENV
+      - name: get original PR
+        if: steps.check.outputs.check == 'true'
+        uses: actions/github-script@v5
+        id: origpr
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const origcommit = `${{ env.orig_commit }}`
+            const result = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: origcommit
+            })
+            const numb = result.data[0].number
+            console.log(numb)
+            return numb
+      - name: Create PR
+        if: steps.check.outputs.check == 'true'
+        id: create-pr
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.ORG_GH_PAT_KI_CICD }}
+          base: main # branch to merge into
+          commit-message: Deploy changes to ${{ env.NEXT_ENV }} from ${{ env.ENV }}
+          committer: ki-cicd <ki-cicd@ki-insurance.com>
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          signoff: false
+          branch: tf-${{ env.NEXT_ENV }}
+          delete-branch: true
+          title: '[CI] Deploy changes to ${{ env.NEXT_ENV }} from ${{ env.ENV }}'
+          body: |
+            *Automated PR*
+            This PR is to deploy changes to *${{ env.NEXT_ENV }}* from *${{ env.ENV }}*
+            Original PR: #${{ steps.origpr.outputs.result }}
+          labels: |
+            automated
+            infra
+          reviewers: "@Ki-Insurance/developers"
+          team-reviewers: |
+            "@Ki-Insurance/developers"
+          draft: false

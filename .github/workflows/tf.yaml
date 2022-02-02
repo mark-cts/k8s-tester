@@ -4,12 +4,19 @@ on:
     branches:
       - main
     paths:
-      - infra/tf/environments/**
+      - 'infra/tf/environments/*yaml'
+      - '!infra/tf/environments/dev.yaml'
   pull_request:
     types: [opened, synchronize]
     paths:
-      - infra/tf/environments/**
+      - 'infra/tf/environments/*yaml'
+      - '!infra/tf/environments/dev.yaml'
   workflow_dispatch:
+    inputs:
+      env:
+        description: 'Environment to run against'
+        required: true
+        default: 'dev'
 env:
   # to track the next env
   after_dev: uat
@@ -17,37 +24,8 @@ env:
   after_live: demo
   after_demo: nil
 jobs:
-  check:
-    outputs: 
-      check: ${{ steps.check.outputs.check }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.GH_TOKEN }}
-          fetch-depth: 0
-      - name: Get specific changed envs
-        id: changed-files
-        uses: tj-actions/changed-files@v1.1.3
-        with:
-          sha: ${{ github.event.pull_request.head.sha }}
-          files: |
-            infra/tf/environments/*yaml
-      - name: Check changes
-        id: check
-        run: |
-          x="${{ steps.changed-files.outputs.all_changed_and_modified_files }}"
-          if [ -z "$x" ]
-          then
-              check="false"
-          else
-              check="true"
-          fi
-          echo "::set-output name=check::$check"
   matrix:
     runs-on: ubuntu-latest
-    needs: check
-    if: needs.check.result == 'success' && needs.check.outputs.check == 'true'
     name: Compile Updated/New files
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -64,10 +42,15 @@ jobs:
             infra/tf/environments/*yaml
       - id: set-matrix
         run: |
-          IFS=$'\n'
-          x="${{ steps.changed-files-specific.outputs.all_changed_and_modified_files }}"
-          echo $x
-          matrix=$(jq -c -n --arg inarr "$x" '{ plans: $inarr | split(" ") }')
+          EVENT_TYPE="${{ github.event_name }}"
+          if [ "$EVENT_TYPE" == "workflow_dispatch" ]
+          then
+            matrix="{ \"plans\": [\"${{ github.event.inputs.env }}\"] }"
+          else
+            CHANGED_ENVFILES_IN_COMMIT="${{ steps.changed-files-specific.outputs.all_changed_and_modified_files }}"
+            echo $CHANGED_ENVFILES_IN_COMMIT
+            matrix=$(jq -c -n --arg inarr "$CHANGED_ENVFILES_IN_COMMIT" '{ plans: $inarr | split(" ") }')
+          fi
           echo $matrix
           echo $matrix | jq .plans
           echo "::set-output name=matrix::$matrix"
@@ -105,46 +88,53 @@ jobs:
         uses: autero1/action-terragrunt@v1.1.0
         with:
           terragrunt_version: 0.31.4
+      - name: Set Env
+        run: |
+          env=$(basename ${{ matrix.plans }} | cut -f 1 -d '.')
+          ENV=${env^^}
+          echo "ENVIRONMENT=$ENV" >> $GITHUB_ENV
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v0.2.1
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v0.4.1
         with:
-          service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
-          export_default_credentials: true
-          credentials_file_path: /tmp/key.json
-
+          credentials_json: "${{ secrets[format('KI_CICD_KEY_{0}', env.ENVIRONMENT)] }}"
+      - name: setup deploy key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
       - name: Terragrunt Validate
         id: validate
         run : |
           filename=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
           cd infra/tf/
           echo "Validating for $filename"
-          TG_ENVIRONMENT=$filename terragrunt run-all validate -no-color --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive 2>&1
+          TG_ENVIRONMENT=$filename terragrunt run-all validate -no-color --terragrunt-working-dir terragrunt/ --terragrunt-include-external-dependencies --terragrunt-non-interactive 2>&1
       # plan only
       - name: Terragrunt Plan
         id: plan
-        if: github.event_name == 'pull_request'
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
         run: |
           filename=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
           cd infra/tf/
           echo "Running plan for $filename"
-          TG_ENVIRONMENT=$filename terragrunt run-all plan -no-color --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive 2>&1
+          TG_ENVIRONMENT=$filename terragrunt run-all plan -no-color --terragrunt-working-dir terragrunt/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
         continue-on-error: true
-      - name: debug
-        run: ${{ toJson(steps.plan.outputs) }}
+      - name: Get job ID
+        id: get-job-id
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "::set-output name=ID::$(curl -s -H "Authorization: token ${{ secrets.GH_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" | jq .jobs[2].id -)"
       - name: Update Pull Request
         uses: actions/github-script@0.9.0
         if: github.event_name == 'pull_request'
-        env:
-          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GH_TOKEN }}
           script: |
             const output = `#### Terraform Validation for ${{ matrix.plans }} 🤖\`${{ steps.validate.outcome }}\`
             #### Terraform Plan for ${{ matrix.plans }}📖\`${{ steps.plan.outcome }}\`
-            <details><summary>Show Plan</summary>
-            \`\`\`\n
-            ${{ env.PLAN }}
-            \`\`\`
+            #### Plan output [here](${{ github.server_url }}/${{ github.repository }}/runs/${{ steps.get-job-id.outputs.ID }}?check_suite_focus=true#step:8:12)
             </details>
             *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
             github.issues.createComment({
@@ -163,26 +153,37 @@ jobs:
           filename=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
           echo "Running Apply for $filename"
           cd infra/tf/
-          TG_ENVIRONMENT=$filename terragrunt run-all apply -auto-approve --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive 2>&1
+          TG_ENVIRONMENT=$filename terragrunt run-all apply -auto-approve --terragrunt-working-dir terragrunt/ --terragrunt-include-external-dependencies --terragrunt-non-interactive 2>&1
       - name: Terragrunt Apply Status
         if: steps.apply.outcome == 'failure'
         run: exit 1
       # make PR On next env
       - name: collate env vars
+        id: env-vars
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |          
+        run: |
           export cur_env=$(basename ${{ matrix.plans }} | cut -f 1 -d '.' )
           eval next_env='$'after_$cur_env
+          file="infra/tf/environments/${next_env}.yaml"
+          if [ ! -f "$file" ]
+          then
+            echo "Env does not exist, skipping."
+            check="false"
+          else
+            echo "Env exists"
+            check="true"
+          fi
+          echo "::set-output name=check::$check"
           echo "cur_env=$cur_env" >> $GITHUB_ENV
           echo "next_env=$next_env" >> $GITHUB_ENV
       - name: update next environment
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil' && steps.env-vars.outputs.check == 'true'
         run: |          
           VAL=$(yq e '.auto_module_versions' infra/tf/environments/${cur_env}.yaml) yq e '.auto_module_versions |= env(VAL)' -i infra/tf/environments/${next_env}.yaml
           VAL=$(yq e '.auto_module_versions' infra/tf/environments/${cur_env}.yaml) yq e '.auto_module_versions |= env(VAL)' infra/tf/environments/${next_env}.yaml
       - name: commit ${{ matrix.plans }}
         id: commit
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil' && steps.env-vars.outputs.check == 'true'
         uses: EndBug/add-and-commit@v7
         with:
           add: infra/tf/environments/${{ env.next_env }}.yaml
@@ -191,19 +192,18 @@ jobs:
           message: "Deploy changes to ${{ env.next_env }} from ${{ env.cur_env }}"
           push: false
       - name: get original commit # todo: check this always works
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil' && steps.env-vars.outputs.check == 'true'
         run: |
           export COMM=$(git rev-list main -1 infra/tf/environments/dev.yaml)
           echo "orig_commit=$COMM" >> $GITHUB_ENV
       - name: get original PR
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil' && steps.env-vars.outputs.check == 'true'
         uses: actions/github-script@v5
         id: origpr
         with:
           github-token: ${{ secrets.GH_TOKEN }}
           script: |
             const origcommit = `${{ env.orig_commit }}`
-
             const result = await github.rest.repos.listPullRequestsAssociatedWithCommit({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -213,7 +213,7 @@ jobs:
             console.log(numb)
             return numb
       - name: Create PR
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env != 'nil' && env.next_env != 'live' && steps.env-vars.outputs.check == 'true'
         id: create-pr
         uses: peter-evans/create-pull-request@v3
         with:
@@ -228,9 +228,7 @@ jobs:
           title: '[CI] Deploy changes to ${{ env.next_env }} from ${{ env.cur_env }}'
           body: |
             *Automated PR*
-
             This PR is to deploy changes to *${{ env.next_env }}* from *${{ env.cur_env }}*
-
             Original PR: #${{ steps.origpr.outputs.result }}
           labels: |
             automated
@@ -240,5 +238,29 @@ jobs:
           team-reviewers: |
             owners
           draft: false
-
-        
+      - name: Create PR for Live
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.next_env == 'live' && steps.env-vars.outputs.check == 'true'
+        id: create-pr-live
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          base: main # branch to merge into
+          commit-message: Deploy changes to ${{ env.next_env }} from ${{ env.cur_env }}
+          committer: ci <ci@gingerninja.co>
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          signoff: false
+          branch: tf-${{ env.next_env }}
+          delete-branch: true
+          title: '[CI] Deploy changes to ${{ env.next_env }} from ${{ env.cur_env }}'
+          body: |
+            *Automated PR*
+            This PR is to deploy changes to *${{ env.next_env }}* from *${{ env.cur_env }}*
+            Original PR: #${{ steps.origpr.outputs.result }}
+          labels: |
+            automated
+            infra
+          assignees: Bltt
+          reviewers: mark-cts
+          team-reviewers: |
+            owners
+          draft: false

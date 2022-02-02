@@ -1,8 +1,11 @@
-name: Terraform Code Change
+name: Terraform Dev Plan
 on:
   pull_request:
     paths:
-      - infra/tf/terraform/**
+      - infra/tf/terragrunt/**
+      - infra/tf/environments/dev.yaml
+env:
+  ENV: dev
 jobs:
   commit-dev:
     runs-on: ubuntu-latest
@@ -13,43 +16,38 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - uses: hashicorp/setup-terraform@v1
-        with:
-          terraform_version: 1.0.4
-          terraform_wrapper: false
-      - name: Setup Terragrunt
-        uses: autero1/action-terragrunt@v1.1.0
-        with:
-          terragrunt_version: 0.31.4
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@master
-        with:
-          service_account_key: ${{ secrets.GCLOUD_SERVICE_KEY }}
-          export_default_credentials: true
-          credentials_file_path: /tmp/key.json
-
       - name: Get specific changed files
         id: changed-files-specific
         uses: tj-actions/changed-files@v1.1.3
         with:
           files: |
-            infra/tf/terraform/**
+            infra/tf/terragrunt/**
       - id: set-matrix
+        if: steps.changed-files-specific.outputs.any_changed == 'true'
         name: sort files
         run: |
-          IFS=$'\n'
           x="${{ steps.changed-files-specific.outputs.all_changed_and_modified_files }}"
           echo $x
-          for direct in $x
+          y=($x)
+          changedModules=()
+          for direct in ${y[@]}
           do
-                  dirname=$(dirname -- ${direct})
-                  echo "$(basename ${dirname})" >> list
+            FILE=terragrunt.hcl
+            DIR=$(dirname ${direct})
+            while [[ $DIR != '.' ]]; do
+                if [[ -f $DIR/$FILE ]]; then
+                    changedModules+=( $(basename $DIR) )
+                    break
+                else
+                    DIR=$(dirname $DIR)
+                fi
+            done
           done
-          LIST=$(cat list | uniq)
-          rm list
-          echo $LIST
+          LIST=${changedModules[@]}
+          echo "LIST $LIST"
           echo "::set-output name=matrix::$LIST"
       - name: Set yaml for DEV
+        if: steps.changed-files-specific.outputs.any_changed == 'true'
         run: |
           export list="${{ steps.set-matrix.outputs.matrix }}"
           export SHA="${{ github.event.pull_request.head.sha }}"
@@ -59,25 +57,84 @@ jobs:
               MODULENAME=$mod yq e '.auto_module_versions[strenv(MODULENAME)] |= strenv(SHA)' -i infra/tf/environments/dev.yaml
           done
       - name: commit dev
+        if: steps.changed-files-specific.outputs.any_changed == 'true'
         uses: EndBug/add-and-commit@v7
         with:
           add: infra/tf/environments/dev.yaml
-          author_name: "ci"
-          author_email: "ci@gingerninja.co"
+          author_name: "ki-cicd"
+          author_email: "ki-cicd@ki-insurance.com"
           message: "Deploy changes to dev from ${{ github.event.pull_request.head.sha }}"
+  plan-dev:
+    runs-on: ubuntu-latest
+    needs: commit-dev
+    name: "Plan Dev"
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: get latest commit
+        run: |
+          git fetch
+          git checkout ${GITHUB_HEAD_REF}
+      - uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.0.4
+          terraform_wrapper: false
+      - name: Setup Terragrunt
+        uses: autero1/action-terragrunt@v1.1.0
+        with:
+          terragrunt_version: 0.31.4
+      - name: Set Env
+        run: |
+          env="${{ env.ENV }}"
+          ENV=${env^^}
+          echo "ENVIRONMENT=$ENV" >> $GITHUB_ENV
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v0.3.0
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v0.4.1
+        with:
+          credentials_json: "${{ secrets.GCLOUD_SERVICE_KEY }}"
+      - name: setup deploy key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
       - name: Terragrunt Validate
         id: validate
         run : |
           cd infra/tf/
           echo "Validating"
-          TG_ENVIRONMENT=dev terragrunt run-all validate -no-color --terragrunt-working-dir terraform/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
+          TG_ENVIRONMENT=dev terragrunt run-all validate -no-color --terragrunt-working-dir terragrunt/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
       - name: Terragrunt Validate Status
         if: steps.validate.outcome == 'failure'
         run: exit 1
-      - name: Trigger Plan
-        uses: benc-uk/workflow-dispatch@v1
+      - name: Terragrunt Plan
+        id: plan
+        run: |
+          cd infra/tf/
+          echo "Running plan for dev"
+          TG_ENVIRONMENT=dev terragrunt run-all plan -no-color --terragrunt-working-dir terragrunt/ --terragrunt-include-external-dependencies --terragrunt-non-interactive
+        continue-on-error: true
+      - name: Get job ID
+        id: get-job-id
+        run: |
+          echo "::set-output name=ID::$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" | jq .jobs[1].id -)"
+      - name: Update Pull Request
+        uses: actions/github-script@0.9.0
         with:
-          workflow: Terraform Config
-          token: ${{ secrets.GH_TOKEN }}
-          ref: ${{ github.event.pull_request.head.ref }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Validation for ${{ matrix.plans }} 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan for ${{ matrix.plans }}📖\`${{ steps.plan.outcome }}\`
 
+            #### Plan output [here](${{ github.server_url }}/${{ github.repository }}/runs/${{ steps.get-job-id.outputs.ID }}?check_suite_focus=true#step:8:12)
+
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
