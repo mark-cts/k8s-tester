@@ -60,6 +60,11 @@ jobs:
       - name: kustomize build
         run: |
           ENV=$(echo ${{ matrix.plans }} | cut -f 4 -d '/')
-          cd infra/k8s/overlays/$ENV/
+          if [[ "$ENV" == "base" ]]
+          then
+            cd infra/k8s/base
+          else
+            cd infra/k8s/overlays/$ENV/
+          fi
           kustomize build .
 # todo: add lint step for justomize build, dry runs etc. need to work out env to get correct paths etc
