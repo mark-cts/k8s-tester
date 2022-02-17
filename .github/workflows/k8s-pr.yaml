@@ -40,7 +40,7 @@ jobs:
           for direct in ${y[@]}
           do
             DIR=$(dirname ${direct})
-            changed+=(basename ${DIR})
+            changed+=( $(basename ${DIR}) )
           done
           LIST=${changed[@]}
           matrix=$(jq -c -n --arg inarr "$LIST" '{ plans: $inarr | split(" ") }')
