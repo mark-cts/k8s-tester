@@ -43,6 +43,7 @@ jobs:
             changed+=( $(basename ${DIR}) )
           done
           LIST=${changed[@]}
+          LIST=$(echo $LIST | xargs -n1 | sort -u | xargs | sed "s# # #g" ) # sort it to avoid duplicates
           matrix=$(jq -c -n --arg inarr "$LIST" '{ plans: $inarr | split(" ") }')
           echo "matrix $matrix"
           echo "::set-output name=matrix::$matrix"
