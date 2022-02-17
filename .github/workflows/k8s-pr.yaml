@@ -50,7 +50,7 @@ jobs:
       - uses: imranismail/setup-kustomize@v1
       - name: Set Env
         run: |
-          env=$(basename ${{ matrix.plans }} | cut -f 2 -d '.')
+          env=$(echo ${{ matrix.plans }} | cut -f 4 -d '/')
           ENV=${env^^}
           echo "ENVIRONMENT=$ENV" >> $GITHUB_ENV
       - name: kustomize build
