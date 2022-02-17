@@ -54,7 +54,6 @@ jobs:
           ENV=${env^^}
           echo "ENVIRONMENT=$ENV" >> $GITHUB_ENV
       - name: kustomize build
-        if: steps.changed-files.outputs.any_changed == 'true'
         run: |
           env=$(basename ${{ matrix.plans }} | cut -f 1 -d '.')
           cd infra/k8s/overlays/${{ env.ENVIRONMENT }}/
