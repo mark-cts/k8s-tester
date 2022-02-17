@@ -14,13 +14,13 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v2
-      - name: Lint Code Base
-        uses: github/super-linter@v4
-        env:
-          VALIDATE_ALL_CODEBASE: false
-          FILTER_REGEX_INCLUDE: .*infra/k8s/.*
-          DEFAULT_BRANCH: main
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Lint Code Base
+      #   uses: github/super-linter@v4
+      #   env:
+      #     VALIDATE_ALL_CODEBASE: false
+      #     FILTER_REGEX_INCLUDE: .*infra/k8s/.*
+      #     DEFAULT_BRANCH: main
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Get changed envs
         id: changed-files
         uses: tj-actions/changed-files@v1.1.3
