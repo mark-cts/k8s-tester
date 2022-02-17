@@ -8,7 +8,7 @@ metadata:
     kubernetes.io/ingress.class: "gce"
 spec:
   rules:
-  - host: dev.py.gingerninja.co
+  - host: devs.py.gingerninja.co
     http:
       paths:
       - path: /*
@@ -25,4 +25,4 @@ metadata:
   name: hello-cert
 spec:
   domains:
-    - dev.py.gingerninja.co
+    - devs.py.gingerninja.co

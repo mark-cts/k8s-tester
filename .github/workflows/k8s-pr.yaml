@@ -35,10 +35,16 @@ jobs:
         run: |
           CHANGED_ENVFILES_IN_COMMIT="${{ steps.changed-files.outputs.all_changed_and_modified_files }}"
           echo $CHANGED_ENVFILES_IN_COMMIT
-          matrix=$(jq -c -n --arg inarr "$CHANGED_ENVFILES_IN_COMMIT" '{ plans: $inarr | split(" ") }')
-          echo $matrix
-          echo $matrix | jq .plans
-          echo "::set-output name=matrix::$matrix"
+          y=($x)
+          changed=()
+          for direct in ${y[@]}
+          do
+            DIR=$(dirname ${direct})
+            changed+=(basename ${DIR})
+          done
+          LIST=${changed[@]}
+          echo "LIST $LIST"
+          echo "::set-output name=matrix::$LIST"
   test:
     name: Lint
     runs-on: ubuntu-latest    
@@ -48,13 +54,9 @@ jobs:
       matrix: ${{fromJson(needs.lint.outputs.matrix)}}
     steps:
       - uses: imranismail/setup-kustomize@v1
-      - name: Set Env
-        run: |
-          env=$(echo ${{ matrix.plans }} | cut -f 4 -d '/')
-          ENV=${env^^}
-          echo "ENVIRONMENT=$ENV" >> $GITHUB_ENV
       - name: kustomize build
         run: |
-          cd infra/k8s/overlays/${{ env.ENVIRONMENT }}/
+          ENV=$(echo ${{ matrix.plans }} | cut -f 4 -d '/')
+          cd infra/k8s/overlays/$ENV/
           kustomize build .
 # todo: add lint step for justomize build, dry runs etc. need to work out env to get correct paths etc
