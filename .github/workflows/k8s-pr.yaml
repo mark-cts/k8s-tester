@@ -35,7 +35,7 @@ jobs:
         run: |
           CHANGED_ENVFILES_IN_COMMIT="${{ steps.changed-files.outputs.all_changed_and_modified_files }}"
           echo $CHANGED_ENVFILES_IN_COMMIT
-          y=($x)
+          y=($CHANGED_ENVFILES_IN_COMMIT)
           changed=()
           for direct in ${y[@]}
           do
