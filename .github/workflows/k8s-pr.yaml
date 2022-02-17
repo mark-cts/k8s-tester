@@ -30,7 +30,7 @@ jobs:
             infra/k8s/overlays/dev
             infra/k8s/overlays/uat
             infra/k8s/overlays/demo
-            infra/k8s/overlays/live      
+            infra/k8s/overlays/live 
       - id: set-matrix
         run: |
           CHANGED_ENVFILES_IN_COMMIT="${{ steps.changed-files.outputs.all_changed_and_modified_files }}"
@@ -50,12 +50,11 @@ jobs:
       - uses: imranismail/setup-kustomize@v1
       - name: Set Env
         run: |
-          env=$(basename ${{ matrix.plans }} | cut -f 1 -d '.')
+          env=$(basename ${{ matrix.plans }} | cut -f 2 -d '.')
           ENV=${env^^}
           echo "ENVIRONMENT=$ENV" >> $GITHUB_ENV
       - name: kustomize build
         run: |
-          env=$(basename ${{ matrix.plans }} | cut -f 1 -d '.')
           cd infra/k8s/overlays/${{ env.ENVIRONMENT }}/
           kustomize build .
 # todo: add lint step for justomize build, dry runs etc. need to work out env to get correct paths etc
