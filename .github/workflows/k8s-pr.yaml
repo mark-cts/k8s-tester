@@ -43,8 +43,9 @@ jobs:
             changed+=(basename ${DIR})
           done
           LIST=${changed[@]}
-          echo "LIST $LIST"
-          echo "::set-output name=matrix::$LIST"
+          matrix=$(jq -c -n --arg inarr "$LIST" '{ plans: $inarr | split(" ") }')
+          echo "matrix $matrix"
+          echo "::set-output name=matrix::$matrix"
   test:
     name: Lint
     runs-on: ubuntu-latest    
