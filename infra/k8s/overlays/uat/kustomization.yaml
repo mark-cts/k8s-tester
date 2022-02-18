@@ -14,3 +14,4 @@ images:
 
 commonLabels:
   env: uat
+  test: thing
