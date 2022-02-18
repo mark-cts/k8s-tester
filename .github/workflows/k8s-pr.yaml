@@ -37,12 +37,12 @@ jobs:
           echo $CHANGED_ENVFILES_IN_COMMIT
           y=($CHANGED_ENVFILES_IN_COMMIT)
           changed=()
-          for direct in ${y[@]}
+          for direct in "${y[@]}"
           do
             DIR=$(dirname ${direct})
             changed+=( $(basename ${DIR}) )
           done
-          LIST=${changed[@]}
+          LIST="${changed[@]}"
           LIST=$(echo $LIST | xargs -n1 | sort -u | xargs | sed "s# # #g" ) # sort it to avoid duplicates
           matrix=$(jq -c -n --arg inarr "$LIST" '{ plans: $inarr | split(" ") }')
           echo "matrix $matrix"
